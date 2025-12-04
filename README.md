@@ -1,73 +1,148 @@
-# React + TypeScript + Vite
+# ER Diagram Builder 🗂️
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive Entity-Relationship diagram builder with real-time physics simulation, built with React, TypeScript, and Tailwind CSS.
 
-Currently, two official plugins are available:
+## 🌟 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Core Functionality
+- **Visual ER Modeling** - Create entities, relationships, and attributes using Chen notation
+- **Interactive Canvas** - Drag, pan, zoom, and organize your diagrams intuitively
+- **Physics Engine** - Automatic layout with configurable force-directed graph simulation
+- **Multi-Selection** - Select and move multiple nodes simultaneously with box selection
+- **Primary Keys** - Mark attributes as primary keys with visual indicators
 
-## React Compiler
+### Advanced Controls
+- **Pan & Zoom** - Space + Drag or Middle Click to pan, Mouse Wheel to zoom
+- **Box Selection** - Drag to select multiple items
+- **Multi-Select** - Ctrl/Cmd + Click to add items to selection
+- **Live Editing** - Click any node to edit its properties in the sidebar
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Data Management
+- **Export/Import** - Save diagrams as JSON files
+- **PNG Export** - Export diagrams as high-quality images
+- **Real-time Updates** - All changes reflect immediately on the canvas
 
-## Expanding the ESLint configuration
+### Physics Configuration
+Fine-tune the automatic layout with adjustable parameters:
+- Repulsion strength between nodes
+- Target distance for connections
+- Collision radius
+- Spring stiffness
+- Damping (friction)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🚀 Live Demo
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Visit the live application: [https://anpapag1.github.io/er-tool/](https://anpapag1.github.io/er-tool/)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🛠️ Tech Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **React 19** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **Tailwind CSS** - Styling
+- **Lucide React** - Icon library
+- **SVG** - Canvas rendering
+
+## 📦 Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/anpapag1/er-tool.git
+cd er-tool
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Deploy to GitHub Pages
+npm run deploy
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🎮 Usage Guide
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Creating Entities
+1. Open the **Entity** tab in the sidebar
+2. Enter entity name
+3. Add attributes (mark primary keys as needed)
+4. Click **Create Entity**
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Creating Relationships
+1. Switch to the **Relationship** tab
+2. Enter relationship name
+3. Select two entities to connect
+4. Set cardinality (1, N, or M) for each side
+5. Add relationship attributes (optional)
+6. Click **Connect Entities**
+
+### Canvas Navigation
+- **Pan**: Hold Space + Drag or use Middle Mouse Button
+- **Zoom**: Mouse Wheel
+- **Select**: Click or drag box
+- **Multi-Select**: Ctrl/Cmd + Click
+- **Edit**: Click a node to edit in sidebar
+- **Move**: Drag selected nodes
+
+### Physics Control
+- Toggle physics on/off with the button in the header
+- Click the Settings icon to adjust physics parameters
+- Physics only affects attributes (entities and relationships stay fixed)
+
+## 📁 Project Structure
+
 ```
+er-tool/
+├── src/
+│   ├── App.tsx           # Main application component
+│   ├── main.tsx          # Entry point
+│   ├── index.css         # Global styles
+│   └── assets/           # Static assets
+├── public/
+│   └── icon.svg          # Favicon
+├── dist/                 # Build output
+├── index.html            # HTML template
+├── vite.config.ts        # Vite configuration
+├── tailwind.config.js    # Tailwind configuration
+└── package.json          # Dependencies
+```
+
+## 🎨 Keyboard Shortcuts
+
+| Action | Shortcut |
+|--------|----------|
+| Pan Canvas | `Space` + Drag |
+| Zoom In/Out | Mouse Wheel |
+| Multi-Select | `Ctrl`/`Cmd` + Click |
+| Deselect All | Click empty canvas |
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to:
+- Report bugs
+- Suggest new features
+- Submit pull requests
+
+## 📄 License
+
+ISC License - See `package.json` for details
+
+## 👤 Author
+
+**anpapag1**
+
+- GitHub: [@anpapag1](https://github.com/anpapag1)
+- Project: [er-tool](https://github.com/anpapag1/er-tool)
+
+## 🙏 Acknowledgments
+
+- Built with [Vite](https://vitejs.dev/)
+- Icons by [Lucide](https://lucide.dev/)
+- Styled with [Tailwind CSS](https://tailwindcss.com/)
+
+---
+
+**Made with ❤️ for database designers and students**
