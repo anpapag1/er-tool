@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Trash2, Share2, Pause, Play, Link, Check, X, MousePointer2, Move, ZoomIn, ZoomOut, Maximize, Upload, Download, PanelLeftClose, PanelLeftOpen, Settings, Image as ImageIcon } from 'lucide-react';
+import { Plus, Share2, Pause, Play, Link, Check, X, MousePointer2, ZoomIn, ZoomOut, Maximize, Upload, Download, PanelLeftClose, PanelLeftOpen, Settings, Image as ImageIcon } from 'lucide-react';
 
 // --- Types ---
 
@@ -86,7 +86,7 @@ export default function ERDiagramTool() {
   // --- Physics State ---
   const [isPhysicsEnabled, setIsPhysicsEnabled] = useState(true);
   const velocities = useRef<Record<string, { vx: number, vy: number }>>({});
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   
   // Physics Configuration
   const [physicsConfig, setPhysicsConfig] = useState<PhysicsConfig>({
@@ -315,7 +315,7 @@ export default function ERDiagramTool() {
   };
 
   const handleMouseDownBg = (e: React.MouseEvent) => {
-    if (e.button === 1 || e.code === 'Space') {
+    if (e.button === 1 || (e as any).code === 'Space') {
         setInteractionMode('PANNING');
         setDragStart({ x: e.clientX, y: e.clientY });
         return;
@@ -560,7 +560,7 @@ export default function ERDiagramTool() {
   // --- CRUD Actions ---
   const handleAddAttributeField = () => setNewAttributes([...newAttributes, { id: `attr_temp_${Date.now()}`, label: '', isPrimaryKey: false }]);
   const handleRemoveAttributeField = (index: number) => { const updated = [...newAttributes]; updated.splice(index, 1); setNewAttributes(updated); };
-  const handleAttributeChange = (index: number, field: 'label' | 'isPrimaryKey', value: any) => { const updated = [...newAttributes]; /* @ts-ignore */ updated[index][field] = value; setNewAttributes(updated); };
+  const handleAttributeChange = (index: number, field: 'label' | 'isPrimaryKey', value: string | boolean) => { const updated = [...newAttributes]; if (field === 'label') { updated[index].label = value as string; } else { updated[index].isPrimaryKey = value as boolean; } setNewAttributes(updated); };
 
   const handleSaveEntity = () => {
     if (!newEntityLabel.trim()) return;
@@ -727,11 +727,7 @@ export default function ERDiagramTool() {
     resetForms();
   };
 
-  const clearCanvas = () => {
-    if (window.confirm("Clear all nodes?")) {
-      setNodes([]); setConnections([]); velocities.current = {}; resetForms(); setSelectedNodeIds([]);
-    }
-  };
+
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 font-sans text-slate-800">
@@ -948,7 +944,7 @@ export default function ERDiagramTool() {
              onMouseUp={handleMouseUp}
              onTouchEnd={handleMouseUp}
              onMouseMove={handleMouseMove}
-             onTouchMove={handleMouseMove}
+             onTouchMove={(e: any) => handleMouseMove(e)}
              onMouseDown={handleMouseDownBg}
              onWheel={handleWheel}
         >
@@ -1052,7 +1048,7 @@ export default function ERDiagramTool() {
                     key={node.id} 
                     transform={`translate(${node.x}, ${node.y})`}
                     onMouseDown={(e) => handleMouseDownNode(e, node.id)}
-                    onTouchStart={(e) => handleMouseDownNode(e, node.id)}
+                    onTouchStart={(e: any) => handleMouseDownNode(e, node.id)}
                     className="cursor-pointer transition-opacity"
                     style={{ opacity: interactionMode === 'DRAGGING_NODES' && !selectedNodeIds.includes(node.id) ? 0.5 : 1 }}
                  >
