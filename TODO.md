@@ -2,11 +2,11 @@
 
 ## 📋 Planned Features
 
-### 1. Weak Entities - Double-bordered rectangles
-- [ ] Add checkbox in entity form to mark as weak
-- [ ] Add `isWeak` property to Entity type
-- [ ] Visual: Render inner rectangle for weak entities
-- [ ] Update save/load to preserve weak entity status
+### 1. ✅ Weak Entities - Double-bordered rectangles (COMPLETED)
+- [x] Add checkbox in entity form to mark as weak
+- [x] Add `isWeak` property to Entity type
+- [x] Visual: Render inner rectangle for weak entities
+- [x] Update save/load to preserve weak entity status
 
 **Implementation Notes:**
 ```tsx
@@ -21,11 +21,11 @@
 
 ---
 
-### 2. Multivalued Attributes - Double-bordered ellipses
-- [ ] Add checkbox for each attribute in forms
-- [ ] Add `isMultivalued` property to Attribute type
-- [ ] Visual: Render outer ellipse for multivalued attributes
-- [ ] Update save/load to preserve multivalued status
+### 2. ✅ Multivalued Attributes - Double-bordered ellipses (COMPLETED)
+- [x] Add checkbox for each attribute in forms
+- [x] Add `isMultivalued` property to Attribute type
+- [x] Visual: Render outer ellipse for multivalued attributes
+- [x] Update save/load to preserve multivalued status
 
 **Implementation Notes:**
 ```tsx
@@ -40,11 +40,11 @@
 
 ---
 
-### 3. Derived Attributes - Dashed ellipse borders
-- [ ] Add checkbox for each attribute in forms
-- [ ] Add `isDerived` property to Attribute type
-- [ ] Visual: Apply dashed stroke style (`strokeDasharray="5,5"`)
-- [ ] Update save/load to preserve derived status
+### 3. ✅ Derived Attributes - Dashed ellipse borders (COMPLETED)
+- [x] Add checkbox for each attribute in forms
+- [x] Add `isDerived` property to Attribute type
+- [x] Visual: Apply dashed stroke style (`strokeDasharray="5,5"`)
+- [x] Update save/load to preserve derived status
 
 **Implementation Notes:**
 ```tsx
@@ -56,72 +56,95 @@
 
 ---
 
-### 4. Undo/Redo - Full history tracking
-- [ ] Create history state with nodes/connections snapshots
-- [ ] Implement undo/redo functions with 50-action limit
-- [ ] Add Ctrl+Z / Ctrl+Y keyboard shortcuts
-- [ ] Add undo/redo buttons in header with disabled states
-- [ ] Push to history on: create, update, delete, move
+### 4. ✅ Undo/Redo - Full history tracking (COMPLETED)
+- [x] Create history state with nodes/connections snapshots
+- [x] Implement undo/redo functions with 50-action limit
+- [x] Add Ctrl+Z / Ctrl+Y keyboard shortcuts
+- [x] Add undo/redo buttons in header with disabled states
+- [x] Push to history on: create, update, delete, move
 
 **Implementation Notes:**
 ```tsx
-const [history, setHistory] = useState<{past: State[], future: State[]}>({past: [], future: []});
-const undo = () => { /* pop from past, push current to future */ };
-const redo = () => { /* pop from future, push current to past */ };
+const [history, setHistory] = useState<{past: Array<{nodes: Node[], connections: Connection[]}>, future: Array<{nodes: Node[], connections: Connection[]}>}>({past: [], future: []});
+const saveHistory = () => { /* Push current state to past, clear future */ };
+const undo = () => { /* Pop from past, push current to future, restore previous */ };
+const redo = () => { /* Pop from future, push current to past, restore next */ };
+// Called before: handleSaveEntity, handleSaveRelationship, deleteSelected, handleMouseUp (drag end)
 ```
 
 ---
 
-### 5. Keyboard Shortcuts
-- [ ] Delete key - Delete selected nodes
-- [ ] Ctrl+A - Select all nodes
-- [ ] Ctrl+Z / Ctrl+Y - Undo/Redo
-- [ ] Ctrl+F - Toggle search bar
-- [ ] Update help panel with new shortcuts
-- [ ] Add keyboard event listener to canvas/window
+### 5. ✅ Keyboard Shortcuts (COMPLETED)
+- [x] Delete key - Delete selected nodes
+- [x] Ctrl+A - Select all nodes
+- [x] Ctrl+Z / Ctrl+Y - Undo/Redo
+- [x] Ctrl+F - Toggle search bar
+- [x] Update help panel with new shortcuts
+- [x] Add keyboard event listener to canvas/window
 
 **Shortcut Table:**
 | Key | Action |
 |-----|--------|
-| Delete | Delete selected |
+| Delete/Backspace | Delete selected |
 | Ctrl+A | Select all |
 | Ctrl+Z | Undo |
 | Ctrl+Y | Redo |
 | Ctrl+F | Search |
 | Space+Drag | Pan |
 
+**Implementation Notes:**
+- Input field detection prevents shortcuts while typing
+- Help panel shows comprehensive keyboard and mouse shortcuts
+
 ---
 
-### 6. Zoom to Fit - Auto-fit all nodes
-- [ ] Add "Fit to Screen" button in toolbar (near zoom controls)
-- [ ] Calculate bounding box of all nodes
-- [ ] Center view and adjust zoom to fit with padding
-- [ ] Animate transition (optional)
+### 6. ✅ Zoom to Fit - Auto-fit all nodes (COMPLETED)
+- [x] Add "Fit to Screen" button in toolbar (near zoom controls)
+- [x] Calculate bounding box of all nodes
+- [x] Center view and adjust zoom to fit with padding
+- [x] Animate transition (optional)
 
 **Implementation Notes:**
 ```tsx
-const zoomToFit = () => {
-  const bounds = calculateBoundingBox(nodes);
-  const zoom = calculateFitZoom(bounds, containerSize);
-  setView({ x: centerX, y: centerY, zoom });
+const handleZoomToFit = () => {
+  if (nodes.length === 0) return;
+  const padding = 100;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  nodes.forEach(node => {
+    minX = Math.min(minX, node.x);
+    minY = Math.min(minY, node.y);
+    maxX = Math.max(maxX, node.x);
+    maxY = Math.max(maxY, node.y);
+  });
+  const width = maxX - minX + padding * 2;
+  const height = maxY - minY + padding * 2;
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const zoomX = containerWidth / width;
+  const zoomY = containerHeight / height;
+  const newZoom = Math.min(Math.max(0.1, Math.min(zoomX, zoomY)), 4);
+  setView({ x: -centerX * newZoom + containerWidth / 2, y: -centerY * newZoom + containerHeight / 2, zoom: newZoom });
 };
 ```
 
 ---
 
-### 7. Grid Snapping - Clean node placement
-- [ ] Add toggle button in header ("Snap to Grid")
-- [ ] Add `isGridSnapping` state
-- [ ] Snap coordinates to 20px grid when moving nodes
-- [ ] Visual feedback: Show grid when snapping is on (optional)
+### 7. ✅ Grid Snapping - Clean node placement (COMPLETED)
+- [x] Add toggle button in header ("Snap to Grid")
+- [x] Add `isGridSnapping` state
+- [x] Snap coordinates to 20px grid when moving nodes
+- [x] Visual feedback: Show grid when snapping is on (optional)
 
 **Implementation Notes:**
 ```tsx
-const snapToGrid = (value: number) => Math.round(value / 20) * 20;
+const snapToGrid = (value: number, gridSize: number = 20) => {
+  return Math.round(value / gridSize) * gridSize;
+};
 // In drag handler:
 if (isGridSnapping) {
-  node.x = snapToGrid(node.x);
-  node.y = snapToGrid(node.y);
+  const newX = n.x + dx;
+  const newY = n.y + dy;
+  return { ...n, x: snapToGrid(newX), y: snapToGrid(newY) };
 }
 ```
 
@@ -156,13 +179,12 @@ CREATE TABLE Entity1_Relationship_Entity2 (
 
 ---
 
-### 9. Search/Filter - Find nodes by name
-- [ ] Add search input in header
-- [ ] Ctrl+F keyboard shortcut to focus search
-- [ ] Filter nodes by label (case-insensitive)
-- [ ] Highlight matching nodes (yellow/orange border)
-- [ ] Scroll/pan to first match
-- [ ] Show "X of Y" results counter
+### 9. ✅ Search/Filter - Find nodes by name (COMPLETED)
+- [x] Add search input in header
+- [x] Ctrl+F keyboard shortcut to focus search
+- [x] Filter nodes by label (case-insensitive)
+- [x] Highlight matching nodes (yellow/orange border)
+- [x] Show "X of Y" results counter
 
 **Implementation Notes:**
 ```tsx
@@ -175,21 +197,33 @@ const matchingNodes = nodes.filter(n =>
 
 ---
 
-### 10. Share Link - URL-based sharing
-- [ ] Encode diagram state to Base64
-- [ ] Compress JSON for smaller URLs
-- [ ] Add "Share" button that copies URL
-- [ ] Toast notification on copy
-- [ ] Auto-load diagram from URL on page load
-- [ ] Handle URL length limits (max ~2000 chars)
+### 10. ✅ Share Link - URL-based sharing (COMPLETED)
+- [x] Encode diagram state to Base64
+- [x] Compress JSON for smaller URLs (using LZString)
+- [x] Add "Share" button that copies URL
+- [x] Toast notification on copy
+- [x] Auto-load diagram from URL on page load
+- [x] Handle URL length limits (max ~2000 chars)
 
 **Implementation Notes:**
 ```tsx
-const shareLink = () => {
-  const state = { nodes, connections };
-  const encoded = btoa(JSON.stringify(state));
-  const url = `${window.location.origin}${window.location.pathname}?diagram=${encoded}`;
+const handleShare = () => {
+  const data = JSON.stringify({ nodes, connections });
+  const compressed = LZString.compressToEncodedURIComponent(data);
+  const url = `${window.location.origin}${window.location.pathname}?diagram=${compressed}`;
   navigator.clipboard.writeText(url);
+  // Show toast notification
+};
+
+const loadFromURL = () => {
+  const params = new URLSearchParams(window.location.search);
+  const diagramParam = params.get('diagram');
+  if (diagramParam) {
+    const decompressed = LZString.decompressFromEncodedURIComponent(diagramParam);
+    const data = JSON.parse(decompressed);
+    setNodes(data.nodes);
+    setConnections(data.connections);
+  }
 };
 ```
 
@@ -221,10 +255,10 @@ const visibleNodes = nodes.filter(n =>
 2. Zoom to Fit
 3. Grid Snapping
 
-**Phase 2 - Core Features:**
-4. Weak Entities
-5. Multivalued Attributes
-6. Derived Attributes
+**Phase 2 - Core Features:** ✅ COMPLETED
+4. ✅ Weak Entities
+5. ✅ Multivalued Attributes
+6. ✅ Derived Attributes
 7. Search/Filter
 
 **Phase 3 - Advanced:**
