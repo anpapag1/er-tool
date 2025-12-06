@@ -515,6 +515,57 @@ export default function ERDiagramTool() {
     setInteractionMode('IDLE');
     setSelectionBox(null);
   };
+
+  // --- Touch Event Handlers ---
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Only handle single touch for panning
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      // Check if touch is on canvas (not on sidebar, header, etc.)
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'svg' || target.tagName === 'g' || (target as HTMLElement).closest('svg')) {
+        setInteractionMode('PANNING');
+        setDragStart({ x: touch.clientX, y: touch.clientY });
+      }
+    }
+    // Multi-touch for zoom (pinch) - handled in handleTouchMove
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && interactionMode === 'PANNING') {
+      const touch = e.touches[0];
+      const dx = touch.clientX - dragStart.x;
+      const dy = touch.clientY - dragStart.y;
+      setView(v => ({ ...v, x: v.x + dx, y: v.y + dy }));
+      setDragStart({ x: touch.clientX, y: touch.clientY });
+    } else if (e.touches.length === 2) {
+      // Pinch zoom
+      e.preventDefault();
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) +
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+      );
+
+      // Store previous distance to calculate zoom delta
+      if (!(window as any).lastTouchDistance) {
+        (window as any).lastTouchDistance = distance;
+      } else {
+        const delta = (distance - (window as any).lastTouchDistance) * 0.01;
+        const newZoom = Math.min(Math.max(0.1, view.zoom + delta), 4);
+        setView(v => ({ ...v, zoom: newZoom }));
+        (window as any).lastTouchDistance = distance;
+      }
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    (window as any).lastTouchDistance = null;
+    if (e.touches.length === 0) {
+      handleMouseUp();
+    }
+  };
   
   // --- Form Logic ---
   const resetForms = useCallback(() => {
@@ -1121,12 +1172,13 @@ export default function ERDiagramTool() {
         )}
 
         {/* Main Canvas */}
-        <div ref={containerRef} className="flex-1 bg-slate-100 dark:bg-gray-950 overflow-hidden relative cursor-crosshair"
+        <div ref={containerRef} className="flex-1 bg-slate-100 dark:bg-gray-950 overflow-hidden relative cursor-crosshair touch-none"
              onMouseUp={handleMouseUp}
-             onTouchEnd={handleMouseUp}
+             onTouchEnd={handleTouchEnd}
              onMouseMove={handleMouseMove}
-             onTouchMove={(e: any) => handleMouseMove(e)}
+             onTouchMove={handleTouchMove}
              onMouseDown={handleMouseDownBg}
+             onTouchStart={handleTouchStart}
              onWheel={handleWheel}
         >
            {/* Grid */}
