@@ -555,12 +555,48 @@ export default function ERDiagramTool() {
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 1 && interactionMode === 'PANNING') {
+    if (e.touches.length === 1) {
       const touch = e.touches[0];
-      const dx = touch.clientX - dragStart.x;
-      const dy = touch.clientY - dragStart.y;
-      setView(v => ({ ...v, x: v.x + dx, y: v.y + dy }));
-      setDragStart({ x: touch.clientX, y: touch.clientY });
+      
+      if (interactionMode === 'PANNING') {
+        const dx = touch.clientX - dragStart.x;
+        const dy = touch.clientY - dragStart.y;
+        setView(v => ({ ...v, x: v.x + dx, y: v.y + dy }));
+        setDragStart({ x: touch.clientX, y: touch.clientY });
+      } else if (interactionMode === 'DRAGGING_NODES') {
+        // Handle node dragging with touch
+        const worldPos = toWorld(touch.clientX, touch.clientY);
+        const dx = worldPos.x - dragStart.x;
+        const dy = worldPos.y - dragStart.y;
+        
+        // Logic: Find all nodes that need to move.
+        // If an ENTITY or RELATIONSHIP is selected, its ATTRIBUTES should also move automatically.
+        const effectiveMovingIds = new Set(selectedNodeIds);
+        
+        selectedNodeIds.forEach(id => {
+            const node = nodes.find(n => n.id === id);
+            if (node && (node.type === 'ENTITY' || node.type === 'RELATIONSHIP')) {
+                // Find children attributes
+                const children = nodes.filter(n => n.parentId === id).map(n => n.id);
+                children.forEach(childId => effectiveMovingIds.add(childId));
+            }
+        });
+
+        // Update node positions
+        setNodes(prev => prev.map(n => {
+            if (effectiveMovingIds.has(n.id)) {
+                return { ...n, x: n.x + dx, y: n.y + dy };
+            }
+            return n;
+        }));
+
+        // Also kill velocity for indirectly moved nodes
+        effectiveMovingIds.forEach(id => {
+             if (velocities.current[id]) velocities.current[id] = { vx: 0, vy: 0 };
+        });
+
+        setDragStart(worldPos);
+      }
     } else if (e.touches.length === 2) {
       // Pinch zoom
       e.preventDefault();
