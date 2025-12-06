@@ -11,15 +11,32 @@ An interactive Entity-Relationship diagram builder with real-time physics simula
 - **Multi-Selection** - Select and move multiple nodes simultaneously with box selection
 - **Primary Keys** - Mark attributes as primary keys with visual indicators
 
+### Chen Notation Support
+- **Weak Entities** - Double-bordered rectangles for weak entity sets
+- **Multivalued Attributes** - Double-bordered ellipses for attributes with multiple values
+- **Derived Attributes** - Dashed borders for computed attributes
+
 ### Advanced Controls
 - **Pan & Zoom** - Space + Drag or Middle Click to pan, Mouse Wheel to zoom
+- **Zoom to Fit** - Automatically fit entire diagram in view with one click
+- **Grid Snapping** - Align nodes to 10px, 20px, or 40px grid with optional grid visibility
+- **Minimap Navigation** - Overview panel in bottom-right corner with click/drag navigation
 - **Box Selection** - Drag to select multiple items
 - **Multi-Select** - Ctrl/Cmd + Click to add items to selection
 - **Live Editing** - Click any node to edit its properties in the sidebar
 
+### Undo/Redo System
+- **50-Action History** - Full undo/redo support with Ctrl+Z/Ctrl+Y
+- **Non-destructive** - Safely experiment with your diagram layout
+
+### Search & Filter
+- **Quick Search** - Find entities, relationships, and attributes instantly (Ctrl+F)
+- **Visual Highlighting** - Matching items highlighted in blue for easy identification
+
 ### Data Management
 - **Export/Import** - Save diagrams as JSON files
-- **PNG Export** - Export diagrams as high-quality images
+- **Multiple Export Formats** - PNG (high-quality 2x), JPEG, SVG, PDF
+- **Share Link** - Generate compressed URLs to share diagrams instantly
 - **Real-time Updates** - All changes reflect immediately on the canvas
 
 ### Physics Configuration
@@ -114,9 +131,14 @@ er-tool/
 
 | Action | Shortcut |
 |--------|----------|
+| Undo | `Ctrl` + `Z` |
+| Redo | `Ctrl` + `Y` |
+| Search | `Ctrl` + `F` |
+| Select All | `Ctrl` + `A` |
+| Delete Selected | `Delete` |
 | Pan Canvas | `Space` + Drag |
 | Zoom In/Out | Mouse Wheel |
-| Multi-Select | `Ctrl`/`Cmd` + Click |
+| Multi-Select | `Ctrl` + Click |
 | Deselect All | Click empty canvas |
 
 ## 🤝 Contributing

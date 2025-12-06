@@ -283,11 +283,18 @@ const visibleNodes = nodes.filter(n =>
 ## 🚀 Future Considerations
 
 - Dark mode theme
-- PDF export
 - Import from SQL
 - Real-time collaboration
 - Template library
 - Validation system
 - Context menu (right-click)
-- Minimap for navigation
 - Tutorial/onboarding flow
+
+---
+
+## 🎉 Recently Completed
+
+- ✅ Minimap for navigation (Bottom-right overview with click/drag navigation)
+- ✅ PDF export (Via print dialog)
+- ✅ Share Link with URL compression
+

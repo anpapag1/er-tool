@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Share2, Pause, Play, Link, Check, X, MousePointer2, ZoomIn, ZoomOut, Maximize, Upload, PanelLeftClose, PanelLeftOpen, Settings, Search, FileDown, ChevronDown, Grid, Undo, Redo, Copy } from 'lucide-react';
+import { Plus, Share2, Pause, Play, Link, Check, X, MousePointer2, ZoomIn, ZoomOut, Maximize, Upload, PanelLeftClose, PanelLeftOpen, Settings, Search, FileDown, ChevronDown, Grid, Undo, Redo, Copy, Map } from 'lucide-react';
 import LZString from 'lz-string';
 
 // --- Types ---
@@ -93,6 +93,8 @@ export default function ERDiagramTool() {
   const [gridSize, setGridSize] = useState(20);
   const [showGrid, setShowGrid] = useState(true);
   const [showToast, setShowToast] = useState(false);
+  const [showMinimap, setShowMinimap] = useState(true);
+  const [isDraggingMinimap, setIsDraggingMinimap] = useState(false);
   
   // --- Selection & View State ---
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
@@ -1347,7 +1349,7 @@ export default function ERDiagramTool() {
                             <label className="block text-sm font-bold text-gray-800">{editingEntityId ? "Edit Attributes" : "2. Attributes"}</label>
                             <button onClick={handleAddAttributeField} className="text-blue-600 text-xs font-bold hover:underline">+ Add Field</button>
                         </div>
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                        <div className="space-y-2 max-h-[450px] overflow-y-auto pr-2">
                             {newAttributes.map((attr, idx) => (
                             <div key={attr.id} className="flex flex-col gap-1 border rounded p-2 bg-gray-50">
                                 <div className="flex gap-2 items-center">
@@ -1462,6 +1464,7 @@ export default function ERDiagramTool() {
                <button onClick={() => setView(v => ({ ...v, zoom: v.zoom * 1.2 }))} className="p-2 hover:bg-gray-100 rounded text-gray-600" title="Zoom In"><ZoomIn size={20}/></button>
                <button onClick={() => setView(v => ({ ...v, zoom: v.zoom / 1.2 }))} className="p-2 hover:bg-gray-100 rounded text-gray-600" title="Zoom Out"><ZoomOut size={20}/></button>
                <button onClick={handleZoomToFit} className="p-2 hover:bg-gray-100 rounded text-gray-600" title="Zoom to Fit"><Maximize size={20}/></button>
+               <button onClick={() => setShowMinimap(!showMinimap)} className={`p-2 rounded text-gray-600 ${showMinimap ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100'}`} title="Toggle Minimap"><Map size={20}/></button>
            </div>
            
            <svg 
@@ -1617,6 +1620,173 @@ export default function ERDiagramTool() {
            </div>
         </div>
       </div>
+      
+      {/* Minimap */}
+      {showMinimap && nodes.length > 0 && (() => {
+        // Calculate bounding box of all nodes
+        const minX = Math.min(...nodes.map(n => n.x));
+        const maxX = Math.max(...nodes.map(n => n.x));
+        const minY = Math.min(...nodes.map(n => n.y));
+        const maxY = Math.max(...nodes.map(n => n.y));
+        
+        const padding = 50;
+        const contentWidth = (maxX - minX) + padding * 2;
+        const contentHeight = (maxY - minY) + padding * 2;
+        
+        // Minimap dimensions
+        const minimapWidth = 180;
+        const minimapHeight = 120;
+        
+        // Calculate scale to fit content in minimap
+        const scaleX = minimapWidth / contentWidth;
+        const scaleY = minimapHeight / contentHeight;
+        const minimapScale = Math.min(scaleX, scaleY);
+        
+        // Calculate viewport rectangle in minimap coordinates
+        const vpWidth = (window.innerWidth / view.zoom) * minimapScale;
+        const vpHeight = (window.innerHeight / view.zoom) * minimapScale;
+        const vpX = ((-view.x / view.zoom - minX + padding) * minimapScale);
+        const vpY = ((-view.y / view.zoom - minY + padding) * minimapScale);
+        
+        const handleMinimapClick = (e: React.MouseEvent<SVGSVGElement>) => {
+          if (isDraggingMinimap) return; // Don't pan if we're dragging
+          
+          const rect = e.currentTarget.getBoundingClientRect();
+          const clickX = e.clientX - rect.left;
+          const clickY = e.clientY - rect.top;
+          
+          // Convert click to diagram coordinates
+          const diagX = (clickX / minimapScale) + minX - padding - (window.innerWidth / view.zoom / 2);
+          const diagY = (clickY / minimapScale) + minY - padding - (window.innerHeight / view.zoom / 2);
+          
+          setView(v => ({
+            ...v,
+            x: -diagX * v.zoom,
+            y: -diagY * v.zoom
+          }));
+        };
+        
+        const handleViewportMouseDown = (e: React.MouseEvent) => {
+          e.stopPropagation();
+          setIsDraggingMinimap(true);
+        };
+        
+        const handleViewportMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+          if (!isDraggingMinimap) return;
+          
+          const rect = e.currentTarget.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+          
+          // Convert to diagram coordinates (centered on cursor)
+          const diagX = (mouseX / minimapScale) + minX - padding - (window.innerWidth / view.zoom / 2);
+          const diagY = (mouseY / minimapScale) + minY - padding - (window.innerHeight / view.zoom / 2);
+          
+          setView(v => ({
+            ...v,
+            x: -diagX * v.zoom,
+            y: -diagY * v.zoom
+          }));
+        };
+        
+        const handleViewportMouseUp = () => {
+          setIsDraggingMinimap(false);
+        };
+        
+        return (
+          <div className="fixed bottom-6 right-6 z-20">
+            <svg 
+              width={minimapWidth} 
+              height={minimapHeight}
+              className="border-2 border-gray-300 rounded-lg shadow-lg bg-white/90 backdrop-blur-sm cursor-pointer"
+              onClick={handleMinimapClick}
+              onMouseMove={handleViewportMouseMove}
+              onMouseUp={handleViewportMouseUp}
+              onMouseLeave={handleViewportMouseUp}
+            >
+              {/* Nodes */}
+              {nodes.map(node => {
+                const x = (node.x - minX + padding) * minimapScale;
+                const y = (node.y - minY + padding) * minimapScale;
+                const size = 6;
+                
+                if (node.type === 'ENTITY') {
+                  return (
+                    <rect
+                      key={node.id}
+                      x={x - size/2}
+                      y={y - size/2}
+                      width={size}
+                      height={size}
+                      fill="#3b82f6"
+                      opacity="0.8"
+                    />
+                  );
+                } else if (node.type === 'RELATIONSHIP') {
+                  return (
+                    <polygon
+                      key={node.id}
+                      points={`${x},${y-size/2} ${x+size/2},${y} ${x},${y+size/2} ${x-size/2},${y}`}
+                      fill="#10b981"
+                      opacity="0.8"
+                    />
+                  );
+                } else {
+                  return (
+                    <circle
+                      key={node.id}
+                      cx={x}
+                      cy={y}
+                      r={size/2}
+                      fill="#f59e0b"
+                      opacity="0.8"
+                    />
+                  );
+                }
+              })}
+              
+              {/* Connections */}
+              {connections.map(conn => {
+                const from = nodes.find(n => n.id === conn.sourceId);
+                const to = nodes.find(n => n.id === conn.targetId);
+                if (!from || !to) return null;
+                
+                const x1 = (from.x - minX + padding) * minimapScale;
+                const y1 = (from.y - minY + padding) * minimapScale;
+                const x2 = (to.x - minX + padding) * minimapScale;
+                const y2 = (to.y - minY + padding) * minimapScale;
+                
+                return (
+                  <line
+                    key={conn.id}
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke="#94a3b8"
+                    strokeWidth="0.5"
+                    opacity="0.4"
+                  />
+                );
+              })}
+              
+              {/* Viewport Rectangle */}
+              <rect
+                x={Math.max(0, Math.min(minimapWidth - vpWidth, vpX))}
+                y={Math.max(0, Math.min(minimapHeight - vpHeight, vpY))}
+                width={Math.min(vpWidth, minimapWidth)}
+                height={Math.min(vpHeight, minimapHeight)}
+                fill="none"
+                stroke="#ef4444"
+                strokeWidth="2"
+                opacity="0.8"
+                onMouseDown={handleViewportMouseDown}
+                className="cursor-move"
+              />
+            </svg>
+          </div>
+        );
+      })()}
       
       {/* Toast Notification */}
       {showToast && (
