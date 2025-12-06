@@ -1578,6 +1578,29 @@ export default function ERDiagramTool() {
                 className="cursor-move"
               />
             </svg>
+            {/* Credits below Minimap */}
+            <div className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
+              <p>
+                Created by{' '}
+                <a 
+                  href="https://github.com/anpapag1" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                >
+                  @anpapag1
+                </a>
+                <br />
+                <a 
+                  href="https://github.com/anpapag1/er-tool" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  View on GitHub
+                </a>
+              </p>
+            </div>
           </div>
         );
       })()}
