@@ -20,3 +20,23 @@ body {
   width: 100%;
   height: 100%;
 }
+
+/* Simple motion helpers */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.95); }
+  60% { opacity: 1; transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 200ms ease-out;
+}
+
+.animate-pop-in {
+  animation: pop-in 220ms ease-out;
+}

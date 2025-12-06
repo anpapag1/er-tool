@@ -282,7 +282,6 @@ const visibleNodes = nodes.filter(n =>
 
 ## 🚀 Future Considerations
 
-- Dark mode theme
 - Import from SQL
 - Real-time collaboration
 - Template library
@@ -294,6 +293,7 @@ const visibleNodes = nodes.filter(n =>
 
 ## 🎉 Recently Completed
 
+- ✅ Dark mode theme (Toggle button in header with persistent localStorage)
 - ✅ Minimap for navigation (Bottom-right overview with click/drag navigation)
 - ✅ PDF export (Via print dialog)
 - ✅ Share Link with URL compression

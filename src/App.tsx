@@ -1,100 +1,43 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Share2, Pause, Play, Link, Check, X, MousePointer2, ZoomIn, ZoomOut, Maximize, Upload, PanelLeftClose, PanelLeftOpen, Settings, Search, FileDown, ChevronDown, Grid, Undo, Redo, Copy, Map } from 'lucide-react';
+import { Check, ZoomIn, ZoomOut, Maximize, Map } from 'lucide-react';
 import LZString from 'lz-string';
-
-// --- Types ---
-
-type NodeType = 'ENTITY' | 'ATTRIBUTE' | 'RELATIONSHIP';
-
-interface Node {
-  id: string;
-  type: NodeType;
-  label: string;
-  x: number;
-  y: number;
-  isPrimaryKey?: boolean; 
-  parentId?: string;
-  isWeak?: boolean; // For weak entities
-  isMultivalued?: boolean; // For multivalued attributes
-  isDerived?: boolean; // For derived attributes
-}
-
-interface Connection {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  label?: string; 
-}
-
-interface AttributeInput {
-  id: string;
-  label: string;
-  isPrimaryKey: boolean;
-  isMultivalued: boolean;
-  isDerived: boolean;
-}
-
-interface ViewState {
-  x: number;
-  y: number;
-  zoom: number;
-}
-
-interface PhysicsConfig {
-    repulsion: number;
-    collisionRadius: number;
-    damping: number;
-    springLength: number;
-    springStiffness: number;
-}
-
-// --- Helper Components ---
-
-const Button = ({ onClick, children, className = "", variant = "primary", icon: Icon, title, disabled }: any) => {
-  const baseStyle = "flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed";
-  const variants = {
-    primary: "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500",
-    secondary: "bg-gray-100 hover:bg-gray-200 text-gray-700 focus:ring-gray-400",
-    danger: "bg-red-50 hover:bg-red-100 text-red-600 focus:ring-red-400",
-    ghost: "bg-transparent hover:bg-gray-100 text-gray-600",
-    success: "bg-green-600 hover:bg-green-700 text-white focus:ring-green-500"
-  };
-
-  return (
-    <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant as keyof typeof variants]} ${className}`} title={title}>
-      {Icon && <Icon size={18} className={children ? "mr-2" : ""} />}
-      {children}
-    </button>
-  );
-};
+import type { Node, Connection, AttributeInput, ViewState, PhysicsConfig } from './types';
+import Header from './components/Header';
+import { Sidebar } from './components/Sidebar';
+import { TutorialOverlay } from './components/TutorialOverlay';
+import { useHistory } from './hooks/useHistory';
+import { useShare } from './hooks/useShare';
+import { useTutorial } from './hooks/useTutorial';
 
 // --- Main Application ---
 
 export default function ERDiagramTool() {
+  // --- Tutorial State ---
+  const tutorial = useTutorial();
+  
   // --- Data State ---
   const [nodes, setNodes] = useState<Node[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   
   // --- History State ---
-  const [history, setHistory] = useState<{ past: Array<{ nodes: Node[], connections: Connection[] }>, future: Array<{ nodes: Node[], connections: Connection[] }> }>({
-    past: [],
-    future: []
-  });
-  const MAX_HISTORY = 50;
+  const { history, saveHistory, undo, redo } = useHistory(nodes, connections);
   
   // --- UI State ---
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isGridSnapping, setIsGridSnapping] = useState(false);
-  const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
   const [gridSize, setGridSize] = useState(20);
   const [showGrid, setShowGrid] = useState(true);
   const [showToast, setShowToast] = useState(false);
   const [showMinimap, setShowMinimap] = useState(true);
   const [isDraggingMinimap, setIsDraggingMinimap] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : false;
+  });
+  
   
   // --- Selection & View State ---
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
@@ -105,69 +48,10 @@ export default function ERDiagramTool() {
     return Math.round(value / gridSize) * gridSize;
   };
   
-  // --- History Functions ---
-  const saveHistory = useCallback(() => {
-    setHistory(prev => {
-      const newPast = [...prev.past, { nodes, connections }];
-      // Limit history to MAX_HISTORY items
-      if (newPast.length > MAX_HISTORY) {
-        newPast.shift();
-      }
-      return {
-        past: newPast,
-        future: [] // Clear future when new action is performed
-      };
-    });
-  }, [nodes, connections]);
-  
-  const undo = useCallback(() => {
-    if (history.past.length === 0) return;
-    
-    const previous = history.past[history.past.length - 1];
-    const newPast = history.past.slice(0, -1);
-    
-    setHistory({
-      past: newPast,
-      future: [{ nodes, connections }, ...history.future]
-    });
-    
-    setNodes(previous.nodes);
-    setConnections(previous.connections);
-    setSelectedNodeIds([]);
-  }, [history, nodes, connections]);
-  
-  const redo = useCallback(() => {
-    if (history.future.length === 0) return;
-    
-    const next = history.future[0];
-    const newFuture = history.future.slice(1);
-    
-    setHistory({
-      past: [...history.past, { nodes, connections }],
-      future: newFuture
-    });
-    
-    setNodes(next.nodes);
-    setConnections(next.connections);
-    setSelectedNodeIds([]);
-  }, [history, nodes, connections]);
-  
   // --- Share Functions ---
-  const handleShare = useCallback(() => {
-    try {
-      const data = JSON.stringify({ nodes, connections });
-      const compressed = LZString.compressToEncodedURIComponent(data);
-      const url = `${window.location.origin}${window.location.pathname}?diagram=${compressed}`;
-      
-      navigator.clipboard.writeText(url).then(() => {
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-      });
-    } catch (error) {
-      console.error('Failed to generate share link:', error);
-      alert('Failed to generate share link. Diagram might be too large.');
-    }
-  }, [nodes, connections]);
+  const { handleShare } = useShare(nodes, connections, setShowToast);
+  
+  // --- History Functions ---
   
   const loadFromURL = useCallback(() => {
     const params = new URLSearchParams(window.location.search);
@@ -218,6 +102,16 @@ export default function ERDiagramTool() {
   useEffect(() => {
       physicsConfigRef.current = physicsConfig;
   }, [physicsConfig]);
+  
+  // Dark mode effect
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
   
   // --- Refs ---
   const svgRef = useRef<SVGSVGElement>(null);
@@ -416,11 +310,11 @@ export default function ERDiagramTool() {
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault();
-        undo();
+        undo(setNodes, setConnections, setSelectedNodeIds);
       }
       if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
         e.preventDefault();
-        redo();
+        redo(setNodes, setConnections, setSelectedNodeIds);
       }
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
@@ -479,6 +373,8 @@ export default function ERDiagramTool() {
       zoom: newZoom
     });
   };
+
+  // Tutorial functions are now handled by useTutorial hook
 
   const handleWheel = (e: React.WheelEvent) => {
     // Zoom by default with scroll wheel
@@ -893,7 +789,6 @@ export default function ERDiagramTool() {
     img.src = url;
   };
 
-  const handleImportClick = () => { fileInputRef.current?.click(); };
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
@@ -930,6 +825,34 @@ export default function ERDiagramTool() {
     setNewAttributes(updated); 
   };
 
+  // Restart Tutorial
+  const restartTutorial = () => {
+    tutorial.restartTutorial();
+  };
+
+  // Handle keyboard navigation for tutorial
+  useEffect(() => {
+    if (!tutorial.isActive) return;
+
+    const handleTutorialKeydown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        tutorial.nextStep();
+      }
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        tutorial.previousStep();
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        tutorial.skipTutorial();
+      }
+    };
+
+    window.addEventListener('keydown', handleTutorialKeydown);
+    return () => window.removeEventListener('keydown', handleTutorialKeydown);
+  }, [tutorial]);
+
   const handleSaveEntity = () => {
     if (!newEntityLabel.trim()) return;
     saveHistory(); // Save state before changes
@@ -939,28 +862,32 @@ export default function ERDiagramTool() {
             const entityIndex = nextNodes.findIndex(n => n.id === editingEntityId);
             if (entityIndex >= 0) nextNodes[entityIndex] = { ...nextNodes[entityIndex], label: newEntityLabel, isWeak: isWeakEntity };
 
-            const existingAttrIds = prev.filter(n => n.parentId === editingEntityId).map(n => n.id);
+            const existingAttrIds = new Set(prev.filter(n => n.parentId === editingEntityId).map(n => n.id));
             const formAttrIds = new Set<string>();
 
             newAttributes.forEach((attr, idx) => {
                 if (!attr.label.trim()) return;
-                if (attr.id.startsWith('attr_temp') || !existingAttrIds.includes(attr.id)) {
+                
+                // Check if this is a new attribute (temp ID or ID not in existing attributes)
+                if (attr.id.startsWith('attr_temp') || !existingAttrIds.has(attr.id)) {
                     const newId = `a_${Date.now()}_${idx}`;
                     const parent = nextNodes.find(n => n.id === editingEntityId)!;
                     const angle = Math.random() * Math.PI * 2;
                     nextNodes.push({ id: newId, type: 'ATTRIBUTE', label: attr.label, x: parent.x + Math.cos(angle) * 80, y: parent.y + Math.sin(angle) * 80, parentId: editingEntityId, isPrimaryKey: attr.isPrimaryKey, isMultivalued: attr.isMultivalued, isDerived: attr.isDerived });
                     velocities.current[newId] = { vx: 0, vy: 0 };
                     setConnections(c => [...c, { id: `c_${Date.now()}_${idx}`, sourceId: editingEntityId, targetId: newId }]);
+                    formAttrIds.add(newId); // Add the new ID to track it
                 } else {
+                    // Update existing attribute
                     formAttrIds.add(attr.id);
                     const nodeIdx = nextNodes.findIndex(n => n.id === attr.id);
                     if (nodeIdx >= 0) nextNodes[nodeIdx] = { ...nextNodes[nodeIdx], label: attr.label, isPrimaryKey: attr.isPrimaryKey, isMultivalued: attr.isMultivalued, isDerived: attr.isDerived };
                 }
             });
 
-            const toDeleteIds = existingAttrIds.filter(id => !formAttrIds.has(id));
+            const toDeleteIds = Array.from(existingAttrIds).filter(id => !formAttrIds.has(id));
             const filteredNodes = nextNodes.filter(n => !toDeleteIds.includes(n.id));
-            if (toDeleteIds.length > 0) setConnections(c => c.filter(conn => !toDeleteIds.includes(conn.targetId)));
+            if (toDeleteIds.length > 0) setConnections(c => c.filter(conn => !toDeleteIds.includes(conn.targetId) && !toDeleteIds.includes(conn.sourceId)));
             return filteredNodes;
         });
     } else {
@@ -999,7 +926,7 @@ export default function ERDiagramTool() {
      // In Create mode, existing nodes for this relationship is empty.
      // In Update mode, it's nodes.filter(n => n.parentId === relId).
      const existingAttrNodes = editingRelId ? nodes.filter(n => n.parentId === relId) : [];
-     const existingAttrIds = existingAttrNodes.map(n => n.id);
+     const existingAttrIds = new Set(existingAttrNodes.map(n => n.id));
      const formAttrIds = new Set<string>();
      
      const newAttrNodes: Node[] = [];
@@ -1027,7 +954,7 @@ export default function ERDiagramTool() {
      newAttributes.forEach((attr, idx) => {
         if (!attr.label.trim()) return;
         
-        if (attr.id.startsWith('attr_temp') || !existingAttrIds.includes(attr.id)) {
+        if (attr.id.startsWith('attr_temp') || !existingAttrIds.has(attr.id)) {
             // New Attribute
             const newId = `a_rel_${Date.now()}_${idx}`;
             const angle = Math.random() * Math.PI * 2;
@@ -1045,12 +972,13 @@ export default function ERDiagramTool() {
             newAttrNodes.push(attrNode);
             velocities.current[newId] = { vx: 0, vy: 0 };
             newAttrConns.push({ id: `c_rel_attr_${Date.now()}_${idx}`, sourceId: relId, targetId: newId });
+            formAttrIds.add(newId); // Track the new ID
         } else {
             formAttrIds.add(attr.id);
         }
      });
      
-     const toDeleteIds = existingAttrIds.filter(id => !formAttrIds.has(id));
+     const toDeleteIds = Array.from(existingAttrIds).filter(id => !formAttrIds.has(id));
 
      if (editingRelId) {
         // --- UPDATE ---
@@ -1074,7 +1002,7 @@ export default function ERDiagramTool() {
              const c2 = { id: `c_${Date.now()}_2`, sourceId: editingRelId, targetId: relEntity2, label: cardinality2 };
              
              // Remove connections to deleted attributes
-             const finalConnections = [...updated, c1, c2, ...newAttrConns].filter(c => !toDeleteIds.includes(c.targetId));
+             const finalConnections = [...updated, c1, c2, ...newAttrConns].filter(c => !toDeleteIds.includes(c.targetId) && !toDeleteIds.includes(c.sourceId));
              return finalConnections;
         });
 
@@ -1105,342 +1033,95 @@ export default function ERDiagramTool() {
 
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 font-sans text-slate-800">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 font-sans text-slate-800 dark:text-gray-100">
+      {/* Tutorial Overlay */}
+      <TutorialOverlay
+        isActive={tutorial.isActive}
+        currentStep={tutorial.getCurrentStep()}
+        stepNumber={tutorial.currentStep + 1}
+        totalSteps={tutorial.steps.length}
+        onNext={tutorial.nextStep}
+        onPrevious={tutorial.previousStep}
+        onSkip={tutorial.skipTutorial}
+        progress={tutorial.getProgress()}
+      />
+      
       {/* Header */}
-      <header className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm z-10 relative">
-        <div className="flex items-center gap-4">
-          <button 
-             onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
-             className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
-             title={isSidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
-          >
-             {isSidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
-          </button>
-
-          <div className="flex items-center gap-2">
-            <Share2 className="text-blue-600" />
-            <h1 className="text-xl font-bold text-gray-800">ER Diagram Builder</h1>
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-            <Button variant="ghost" onClick={undo} disabled={history.past.length === 0} icon={Undo} title="Undo (Ctrl+Z)" />
-            <Button variant="ghost" onClick={redo} disabled={history.future.length === 0} icon={Redo} title="Redo (Ctrl+Y)" />
-            <div className="h-8 w-px bg-gray-200 mx-2 self-center"></div>
-            
-            <button onClick={() => setIsPhysicsEnabled(!isPhysicsEnabled)} className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isPhysicsEnabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
-                {isPhysicsEnabled ? <Pause size={16} className="mr-2" /> : <Play size={16} className="mr-2" />}
-                {isPhysicsEnabled ? "Physics On" : "Physics Off"}
-            </button>
-            
-            <div className="relative">
-                <button 
-                    onClick={() => setIsGridMenuOpen(!isGridMenuOpen)}
-                    className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isGridSnapping ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}
-                    title="Grid Options"
-                >
-                    <Grid size={16} />
-                    <span>{isGridSnapping ? "Grid Snap On" : "Grid Snap Off"}</span>
-                    <ChevronDown size={14} />
-                </button>
-                
-                {isGridMenuOpen && (
-                    <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-xl border w-48 z-50">
-                        <div className="p-2 border-b">
-                            <label className="flex items-center justify-between px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer">
-                                <span className="text-sm">Enable Snapping</span>
-                                <input 
-                                    type="checkbox" 
-                                    checked={isGridSnapping} 
-                                    onChange={(e) => setIsGridSnapping(e.target.checked)}
-                                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                                />
-                            </label>
-                            <label className="flex items-center justify-between px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer">
-                                <span className="text-sm">Show Grid</span>
-                                <input 
-                                    type="checkbox" 
-                                    checked={showGrid} 
-                                    onChange={(e) => setShowGrid(e.target.checked)}
-                                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                                />
-                            </label>
-                        </div>
-                        <div className="p-2">
-                            <div className="text-xs font-semibold text-gray-500 px-2 py-1">Grid Size</div>
-                            <button 
-                                onClick={() => { setGridSize(10); setIsGridMenuOpen(false); }}
-                                className={`w-full text-left px-2 py-1.5 text-sm hover:bg-gray-50 rounded transition-colors ${gridSize === 10 ? 'bg-blue-50 text-blue-700 font-medium' : ''}`}
-                            >
-                                10px (Fine)
-                            </button>
-                            <button 
-                                onClick={() => { setGridSize(20); setIsGridMenuOpen(false); }}
-                                className={`w-full text-left px-2 py-1.5 text-sm hover:bg-gray-50 rounded transition-colors ${gridSize === 20 ? 'bg-blue-50 text-blue-700 font-medium' : ''}`}
-                            >
-                                20px (Default)
-                            </button>
-                            <button 
-                                onClick={() => { setGridSize(40); setIsGridMenuOpen(false); }}
-                                className={`w-full text-left px-2 py-1.5 text-sm hover:bg-gray-50 rounded transition-colors ${gridSize === 40 ? 'bg-blue-50 text-blue-700 font-medium' : ''}`}
-                            >
-                                40px (Coarse)
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
-            
-            <div className="h-8 w-px bg-gray-200 mx-2 self-center"></div>
-            
-            {/* Search Box - Inline */}
-            
-            {/* Search Box - Inline */}
-            {isSearchOpen && (
-                <div className="flex items-center gap-2 bg-white border rounded-lg px-2 py-1 shadow-sm">
-                    <Search size={16} className="text-gray-400" />
-                    <input 
-                        type="text" 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search nodes..."
-                        className="w-48 px-1 py-1 text-sm outline-none"
-                        autoFocus
-                    />
-                    <span className="text-xs text-gray-500">
-                        {searchQuery.trim() ? `${nodes.filter(n => n.label.toLowerCase().includes(searchQuery.toLowerCase().trim())).length}/${nodes.length}` : ''}
-                    </span>
-                    <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="text-gray-400 hover:text-gray-600">
-                        <X size={16} />
-                    </button>
-                </div>
-            )}
-            
-            <Button variant="ghost" onClick={() => setIsSearchOpen(!isSearchOpen)} icon={Search} className={isSearchOpen ? 'bg-gray-200' : ''} title="Search (Ctrl+F)" />
-            <Button variant="ghost" onClick={handleShare} icon={Copy} title="Share Link" disabled={nodes.length === 0}>Share</Button>
-            <Button variant="ghost" onClick={() => setIsSettingsOpen(!isSettingsOpen)} icon={Settings} className={isSettingsOpen ? 'bg-gray-200' : ''} title="Physics Settings" />
-            
-            <div className="relative">
-                <button 
-                    onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-                    className="flex items-center gap-1 px-3 py-2 rounded-lg font-medium transition-colors bg-transparent hover:bg-gray-100 text-gray-600"
-                    title="Export Options"
-                >
-                    <FileDown size={18} />
-                    <span className="text-sm">Export</span>
-                    <ChevronDown size={14} />
-                </button>
-                
-                {isExportMenuOpen && (
-                    <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-xl border w-40 z-50">
-                        <button onClick={() => { handleExport(); setIsExportMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 rounded-t-lg transition-colors">JSON</button>
-                        <button onClick={() => { handleExportPng(); setIsExportMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors">PNG (High Quality)</button>
-                        <button onClick={() => { handleExportJpeg(); setIsExportMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors">JPEG</button>
-                        <button onClick={() => { handleExportSvg(); setIsExportMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors">SVG</button>
-                        <button onClick={() => { handleExportPdf(); setIsExportMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 rounded-b-lg transition-colors">PDF (Print)</button>
-                    </div>
-                )}
-            </div>
-            
-            <Button variant="ghost" onClick={handleImportClick} icon={Upload} title="Load from JSON">Load</Button>
-            
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".json" />
-        </div>
-        
-        {/* Physics Settings Panel (Absolute) */}
-        {isSettingsOpen && (
-            <div className="absolute top-full right-6 mt-2 bg-white rounded-lg shadow-xl border p-4 w-72 z-50">
-                <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-bold text-gray-700 text-sm">Physics Settings</h3>
-                    <button onClick={() => setIsSettingsOpen(false)}><X size={16} className="text-gray-400 hover:text-gray-600"/></button>
-                </div>
-                
-                <div className="space-y-4">
-                    <div>
-                        <div className="flex justify-between mb-1">
-                            <label className="text-xs font-medium text-gray-600">Repulsion</label>
-                            <span className="text-xs text-gray-400">{physicsConfig.repulsion}</span>
-                        </div>
-                        <input 
-                            type="range" min="1000" max="50000" step="1000" 
-                            value={physicsConfig.repulsion}
-                            onChange={(e) => setPhysicsConfig({...physicsConfig, repulsion: parseInt(e.target.value)})}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                        />
-                    </div>
-
-                    <div>
-                        <div className="flex justify-between mb-1">
-                            <label className="text-xs font-medium text-gray-600">Target Distance</label>
-                            <span className="text-xs text-gray-400">{physicsConfig.springLength}px</span>
-                        </div>
-                        <input 
-                            type="range" min="30" max="200" step="5" 
-                            value={physicsConfig.springLength}
-                            onChange={(e) => setPhysicsConfig({...physicsConfig, springLength: parseInt(e.target.value)})}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                        />
-                    </div>
-
-                    <div>
-                        <div className="flex justify-between mb-1">
-                            <label className="text-xs font-medium text-gray-600">Stiffness</label>
-                            <span className="text-xs text-gray-400">{physicsConfig.springStiffness}</span>
-                        </div>
-                        <input 
-                            type="range" min="0.01" max="0.2" step="0.01" 
-                            value={physicsConfig.springStiffness}
-                            onChange={(e) => setPhysicsConfig({...physicsConfig, springStiffness: parseFloat(e.target.value)})}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                        />
-                    </div>
-
-                    <div>
-                        <div className="flex justify-between mb-1">
-                            <label className="text-xs font-medium text-gray-600">Friction (Damping)</label>
-                            <span className="text-xs text-gray-400">{physicsConfig.damping}</span>
-                        </div>
-                        <input 
-                            type="range" min="0.1" max="0.99" step="0.01" 
-                            value={physicsConfig.damping}
-                            onChange={(e) => setPhysicsConfig({...physicsConfig, damping: parseFloat(e.target.value)})}
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                        />
-                    </div>
-                </div>
-            </div>
-        )}
-      </header>
+      <Header
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        history={history}
+        onUndo={() => undo(setNodes, setConnections, setSelectedNodeIds)}
+        onRedo={() => redo(setNodes, setConnections, setSelectedNodeIds)}
+        isPhysicsEnabled={isPhysicsEnabled}
+        setIsPhysicsEnabled={setIsPhysicsEnabled}
+        isGridSnapping={isGridSnapping}
+        setIsGridSnapping={setIsGridSnapping}
+        showGrid={showGrid}
+        setShowGrid={setShowGrid}
+        gridSize={gridSize}
+        setGridSize={setGridSize}
+        isSearchOpen={isSearchOpen}
+        setIsSearchOpen={setIsSearchOpen}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        nodes={nodes}
+        onShare={handleShare}
+        onExportJson={handleExport}
+        onExportPng={handleExportPng}
+        onExportJpeg={handleExportJpeg}
+        onExportSvg={handleExportSvg}
+        onExportPdf={handleExportPdf}
+        onLoad={handleFileChange}
+        isSettingsOpen={isSettingsOpen}
+        setIsSettingsOpen={setIsSettingsOpen}
+        physicsConfig={physicsConfig}
+        setPhysicsConfig={setPhysicsConfig}
+        onRestartTutorial={restartTutorial}
+        onStartTutorial={tutorial.startTutorial}
+        isDarkMode={isDarkMode}
+        setIsDarkMode={setIsDarkMode}
+        fileInputRef={fileInputRef}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         
         {/* Sidebar */}
         {isSidebarOpen && (
-        <div className="w-96 bg-white border-r flex flex-col shadow-lg z-10 overflow-hidden flex-shrink-0 transition-all">
-          <div className="flex border-b">
-            <button className={`flex-1 py-3 text-sm font-medium ${activeTab === 'ENTITY' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-gray-50'}`} onClick={() => setActiveTab('ENTITY')}>Entity</button>
-            <button className={`flex-1 py-3 text-sm font-medium ${activeTab === 'RELATIONSHIP' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-gray-50'}`} onClick={() => setActiveTab('RELATIONSHIP')}>Relationship</button>
-          </div>
-
-          <div className="p-4 flex-1 overflow-y-auto">
-             {selectedNodeIds.length > 1 ? (
-                 <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                    <MousePointer2 size={48} className="mb-4 opacity-20" />
-                    <p>{selectedNodeIds.length} items selected</p>
-                    <Button variant="danger" className="mt-4" onClick={deleteSelected}>Delete Selection</Button>
-                 </div>
-             ) : (
-                <>
-                {activeTab === 'ENTITY' && (
-                <div className="space-y-6">
-                    <div>
-                        <div className="flex justify-between items-center mb-2">
-                            <label className="block text-sm font-bold text-gray-800">{editingEntityId ? "Edit Entity Name" : "1. New Entity"}</label>
-                            {editingEntityId && <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded font-bold">EDITING</span>}
-                        </div>
-                        <input type="text" value={newEntityLabel} onChange={(e) => setNewEntityLabel(e.target.value)} placeholder="Entity Name" className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50"/>
-                        <div className="mt-2 flex items-center gap-2">
-                            <input type="checkbox" id="weakEntity" checked={isWeakEntity} onChange={(e) => setIsWeakEntity(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/>
-                            <label htmlFor="weakEntity" className="text-sm text-gray-600 cursor-pointer">Weak Entity (double-bordered)</label>
-                        </div>
-                    </div>
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="block text-sm font-bold text-gray-800">{editingEntityId ? "Edit Attributes" : "2. Attributes"}</label>
-                            <button onClick={handleAddAttributeField} className="text-blue-600 text-xs font-bold hover:underline">+ Add Field</button>
-                        </div>
-                        <div className="space-y-2 max-h-[450px] overflow-y-auto pr-2">
-                            {newAttributes.map((attr, idx) => (
-                            <div key={attr.id} className="flex flex-col gap-1 border rounded p-2 bg-gray-50">
-                                <div className="flex gap-2 items-center">
-                                    <div className="flex-1">
-                                        <input type="text" value={attr.label} onChange={(e) => handleAttributeChange(idx, 'label', e.target.value)} placeholder={`Attr ${idx + 1}`} className="w-full px-2 py-1.5 text-sm border rounded focus:ring-1 focus:ring-blue-500 outline-none bg-white" onKeyDown={(e) => { if (e.key === 'Enter' && idx === newAttributes.length - 1) handleAddAttributeField(); }}/>
-                                    </div>
-                                    <button onClick={() => handleRemoveAttributeField(idx)} className="text-gray-400 hover:text-red-500"><X size={16} /></button>
-                                </div>
-                                <div className="flex gap-2 text-xs">
-                                    <div className={`cursor-pointer px-2 py-1 rounded font-bold border transition-colors ${attr.isPrimaryKey ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-gray-100 text-gray-500 border-gray-200'}`} onClick={() => handleAttributeChange(idx, 'isPrimaryKey', !attr.isPrimaryKey)} title="Primary Key">PK</div>
-                                    <div className={`cursor-pointer px-2 py-1 rounded font-bold border transition-colors ${attr.isMultivalued ? 'bg-purple-100 text-purple-700 border-purple-300' : 'bg-gray-100 text-gray-500 border-gray-200'}`} onClick={() => handleAttributeChange(idx, 'isMultivalued', !attr.isMultivalued)} title="Multivalued (double ellipse)">Multi</div>
-                                    <div className={`cursor-pointer px-2 py-1 rounded font-bold border transition-colors ${attr.isDerived ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-gray-100 text-gray-500 border-gray-200'}`} onClick={() => handleAttributeChange(idx, 'isDerived', !attr.isDerived)} title="Derived (dashed)">Der</div>
-                                </div>
-                            </div>
-                            ))}
-                        </div>
-                    </div>
-                    <Button onClick={handleSaveEntity} className="w-full py-3" variant={editingEntityId ? "success" : "primary"} icon={editingEntityId ? Check : Plus}>{editingEntityId ? "Update Entity" : "Create Entity"}</Button>
-                    {editingEntityId && <Button onClick={() => setSelectedNodeIds([])} className="w-full" variant="ghost">Cancel Edit</Button>}
-                </div>
-                )}
-
-                {activeTab === 'RELATIONSHIP' && (
-                <div className="space-y-4">
-                    <div className="flex justify-between items-center mb-1">
-                        <label className="block text-sm font-bold text-gray-800">Relationship Name</label>
-                        {editingRelId && <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded font-bold">EDITING</span>}
-                    </div>
-                    <input type="text" value={relLabel} onChange={(e) => setRelLabel(e.target.value)} placeholder="e.g. Enrolls In" className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"/>
-                    
-                    <div className="p-3 bg-gray-50 rounded-lg space-y-3 border">
-                        <div className="flex items-end gap-2">
-                            <div className="flex-1">
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Entity 1</label>
-                                <select value={relEntity1} onChange={(e) => setRelEntity1(e.target.value)} className="w-full px-2 py-2 border rounded text-sm bg-white">
-                                <option value="">Select...</option>
-                                {nodes.filter(n => n.type === 'ENTITY').map(n => (<option key={n.id} value={n.id}>{n.label}</option>))}
-                                </select>
-                            </div>
-                            <div className="w-16"><select value={cardinality1} onChange={e => setCardinality1(e.target.value)} className="w-full px-1 py-2 border rounded text-sm bg-white text-center"><option value="1">1</option><option value="N">N</option><option value="M">M</option></select></div>
-                        </div>
-                        <div className="flex justify-center text-gray-400"><Link size={16} /></div>
-                        <div className="flex items-end gap-2">
-                            <div className="flex-1">
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Entity 2</label>
-                                <select value={relEntity2} onChange={(e) => setRelEntity2(e.target.value)} className="w-full px-2 py-2 border rounded text-sm bg-white">
-                                <option value="">Select...</option>
-                                {nodes.filter(n => n.type === 'ENTITY').map(n => (<option key={n.id} value={n.id}>{n.label}</option>))}
-                                </select>
-                            </div>
-                            <div className="w-16"><select value={cardinality2} onChange={e => setCardinality2(e.target.value)} className="w-full px-1 py-2 border rounded text-sm bg-white text-center"><option value="1">1</option><option value="N">N</option><option value="M">M</option></select></div>
-                        </div>
-                    </div>
-
-                    {/* NEW: Relationship Attributes Section */}
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="block text-sm font-bold text-gray-800">Relationship Attributes</label>
-                            <button onClick={handleAddAttributeField} className="text-blue-600 text-xs font-bold hover:underline">+ Add Field</button>
-                        </div>
-                        <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2">
-                            {newAttributes.map((attr, idx) => (
-                            <div key={attr.id} className="flex flex-col gap-1 border rounded p-2 bg-gray-50">
-                                <div className="flex gap-2 items-center">
-                                    <div className="flex-1">
-                                        <input type="text" value={attr.label} onChange={(e) => handleAttributeChange(idx, 'label', e.target.value)} placeholder={`Attr ${idx + 1}`} className="w-full px-2 py-1.5 text-sm border rounded focus:ring-1 focus:ring-blue-500 outline-none bg-white" onKeyDown={(e) => { if (e.key === 'Enter' && idx === newAttributes.length - 1) handleAddAttributeField(); }}/>
-                                    </div>
-                                    <button onClick={() => handleRemoveAttributeField(idx)} className="text-gray-400 hover:text-red-500"><X size={16} /></button>
-                                </div>
-                                <div className="flex gap-2 text-xs">
-                                    <div className={`cursor-pointer px-2 py-1 rounded font-bold border transition-colors ${attr.isPrimaryKey ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-gray-100 text-gray-500 border-gray-200'}`} onClick={() => handleAttributeChange(idx, 'isPrimaryKey', !attr.isPrimaryKey)} title="Primary Key">PK</div>
-                                    <div className={`cursor-pointer px-2 py-1 rounded font-bold border transition-colors ${attr.isMultivalued ? 'bg-purple-100 text-purple-700 border-purple-300' : 'bg-gray-100 text-gray-500 border-gray-200'}`} onClick={() => handleAttributeChange(idx, 'isMultivalued', !attr.isMultivalued)} title="Multivalued (double ellipse)">Multi</div>
-                                    <div className={`cursor-pointer px-2 py-1 rounded font-bold border transition-colors ${attr.isDerived ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-gray-100 text-gray-500 border-gray-200'}`} onClick={() => handleAttributeChange(idx, 'isDerived', !attr.isDerived)} title="Derived (dashed)">Der</div>
-                                </div>
-                            </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <Button onClick={handleSaveRelationship} className="w-full" variant={editingRelId ? "success" : "primary"} icon={editingRelId ? Check : Plus}>{editingRelId ? "Update Relationship" : "Connect Entities"}</Button>
-                    {editingRelId && <Button onClick={() => setSelectedNodeIds([])} className="w-full" variant="ghost">Cancel Edit</Button>}
-                </div>
-                )}
-                </>
-             )}
-          </div>
-        </div>
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            selectedNodeIds={selectedNodeIds}
+            nodes={nodes}
+            newEntityLabel={newEntityLabel}
+            setNewEntityLabel={setNewEntityLabel}
+            isWeakEntity={isWeakEntity}
+            setIsWeakEntity={setIsWeakEntity}
+            editingEntityId={editingEntityId}
+            relLabel={relLabel}
+            setRelLabel={setRelLabel}
+            relEntity1={relEntity1}
+            setRelEntity1={setRelEntity1}
+            relEntity2={relEntity2}
+            setRelEntity2={setRelEntity2}
+            cardinality1={cardinality1}
+            setCardinality1={setCardinality1}
+            cardinality2={cardinality2}
+            setCardinality2={setCardinality2}
+            editingRelId={editingRelId}
+            newAttributes={newAttributes}
+            handleAddAttributeField={handleAddAttributeField}
+            handleRemoveAttributeField={handleRemoveAttributeField}
+            handleAttributeChange={handleAttributeChange}
+            handleSaveEntity={handleSaveEntity}
+            handleSaveRelationship={handleSaveRelationship}
+            deleteSelected={deleteSelected}
+            setSelectedNodeIds={setSelectedNodeIds}
+          />
         )}
 
         {/* Main Canvas */}
-        <div ref={containerRef} className="flex-1 bg-slate-100 overflow-hidden relative cursor-crosshair"
+        <div ref={containerRef} className="flex-1 bg-slate-100 dark:bg-gray-950 overflow-hidden relative cursor-crosshair"
              onMouseUp={handleMouseUp}
              onTouchEnd={handleMouseUp}
              onMouseMove={handleMouseMove}
@@ -1452,7 +1133,7 @@ export default function ERDiagramTool() {
            {showGrid && (
            <div className="absolute inset-0 opacity-25 pointer-events-none" 
                 style={{ 
-                    backgroundImage: 'radial-gradient(#64748b 1.5px, transparent 1.5px)', 
+                    backgroundImage: `radial-gradient(${isDarkMode ? '#9ca3af' : '#64748b'} 1.5px, transparent 1.5px)`, 
                     backgroundSize: `${gridSize * view.zoom}px ${gridSize * view.zoom}px`,
                     backgroundPosition: `${view.x}px ${view.y}px`
                 }}>
@@ -1460,11 +1141,11 @@ export default function ERDiagramTool() {
            )}
 
            {/* Toolbar */}
-           <div className="absolute bottom-6 left-6 flex bg-white rounded-lg shadow-lg border p-1 gap-1 z-20">
-               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom * 1.2 }))} className="p-2 hover:bg-gray-100 rounded text-gray-600" title="Zoom In"><ZoomIn size={20}/></button>
-               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom / 1.2 }))} className="p-2 hover:bg-gray-100 rounded text-gray-600" title="Zoom Out"><ZoomOut size={20}/></button>
-               <button onClick={handleZoomToFit} className="p-2 hover:bg-gray-100 rounded text-gray-600" title="Zoom to Fit"><Maximize size={20}/></button>
-               <button onClick={() => setShowMinimap(!showMinimap)} className={`p-2 rounded text-gray-600 ${showMinimap ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-100'}`} title="Toggle Minimap"><Map size={20}/></button>
+           <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 flex bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 p-1 gap-1 z-20 flex-wrap w-auto md:w-auto" data-tutorial="zoom-controls">
+               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom * 1.2 }))} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-300 transition-colors" title="Zoom In (Ctrl +)"><ZoomIn size={18} className="md:w-5 md:h-5"/></button>
+               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom / 1.2 }))} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-300 transition-colors" title="Zoom Out (Ctrl -)"><ZoomOut size={18} className="md:w-5 md:h-5"/></button>
+               <button onClick={handleZoomToFit} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-300 transition-colors" title="Zoom to Fit"><Maximize size={18} className="md:w-5 md:h-5"/></button>
+               <button onClick={() => setShowMinimap(!showMinimap)} className={`p-2 rounded text-gray-600 dark:text-gray-300 transition-colors ${showMinimap ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`} title="Toggle Minimap"><Map size={18} className="md:w-5 md:h-5"/></button>
            </div>
            
            <svg 
@@ -1473,7 +1154,7 @@ export default function ERDiagramTool() {
            >
              <defs>
                 <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="20" refY="3.5" orient="auto">
-                  <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+                  <polygon points="0 0, 10 3.5, 0 7" fill={isDarkMode ? "#e5e7eb" : "#333"} />
                 </marker>
              </defs>
 
@@ -1508,7 +1189,7 @@ export default function ERDiagramTool() {
                     
                     // 4. Check if connection is selected (either endpoint is selected)
                     const isConnSelected = selectedNodeIds.includes(conn.sourceId) || selectedNodeIds.includes(conn.targetId);
-                    const connStroke = isConnSelected ? "#2563eb" : "black";
+                    const connStroke = isConnSelected ? "#2563eb" : (isDarkMode ? "#9ca3af" : "black");
                     const connStrokeWidth = isConnSelected ? (isMany ? 5 : 2.5) : strokeWidth;
 
                     return (
@@ -1530,8 +1211,8 @@ export default function ERDiagramTool() {
                                         cx={labelX} 
                                         cy={labelY} 
                                         r={12} 
-                                        fill="white" 
-                                        stroke="#e2e8f0" 
+                                        fill={isDarkMode ? "#374151" : "white"} 
+                                        stroke={isDarkMode ? "#4b5563" : "#e2e8f0"} 
                                         strokeWidth="1"
                                         className="shadow-sm"
                                     />
@@ -1541,7 +1222,8 @@ export default function ERDiagramTool() {
                                         y={labelY} 
                                         textAnchor="middle" 
                                         dy="4" // Vertical center adjustment
-                                        className="text-xs font-bold fill-gray-800 select-none pointer-events-none"
+                                        fill={isDarkMode ? "#f3f4f6" : "#1f2937"}
+                                        className="text-xs font-bold select-none pointer-events-none"
                                     >
                                         {conn.label}
                                     </text>
@@ -1553,8 +1235,9 @@ export default function ERDiagramTool() {
 
                  {nodes.map(node => {
                     const isMatch = searchQuery.trim() !== '' && node.label.toLowerCase().includes(searchQuery.toLowerCase().trim());
-                    const highlightStroke = isMatch ? "#f59e0b" : (selectedNodeIds.includes(node.id) ? "#2563eb" : "black");
-                    const highlightFill = isMatch ? "#fef3c7" : "white";
+                    const highlightStroke = isMatch ? "#f59e0b" : (selectedNodeIds.includes(node.id) ? "#2563eb" : (isDarkMode ? "#e5e7eb" : "black"));
+                    const highlightFill = isMatch ? "#fef3c7" : (isDarkMode ? "#374151" : "white");
+                    const textColor = isDarkMode ? "#f3f4f6" : "#1f2937";
                     
                     return (
                  <g 
@@ -1569,20 +1252,20 @@ export default function ERDiagramTool() {
                      <>
                          <rect x="-60" y="-25" width="120" height="50" fill={highlightFill} stroke={highlightStroke} strokeWidth={selectedNodeIds.includes(node.id) || isMatch ? "3" : "2"} />
                          {node.isWeak && <rect x="-54" y="-19" width="108" height="38" fill="none" stroke={highlightStroke} strokeWidth={selectedNodeIds.includes(node.id) || isMatch ? "2" : "1.5"} />}
-                         <text x="0" y="0" textAnchor="middle" dy="5" className="text-sm font-bold select-none pointer-events-none">{node.label}</text>
+                         <text x="0" y="0" textAnchor="middle" dy="5" fill={textColor} className="text-sm font-bold select-none pointer-events-none">{node.label}</text>
                      </>
                      )}
                      {node.type === 'ATTRIBUTE' && (
                      <>
                          <ellipse cx="0" cy="0" rx="45" ry="25" fill={highlightFill} stroke={highlightStroke} strokeWidth={selectedNodeIds.includes(node.id) || isMatch ? "3" : "1.5"} strokeDasharray={node.isDerived ? "5,5" : "none"} />
                          {node.isMultivalued && <ellipse cx="0" cy="0" rx="50" ry="30" fill="none" stroke={highlightStroke} strokeWidth={selectedNodeIds.includes(node.id) || isMatch ? "2" : "1"} strokeDasharray={node.isDerived ? "5,5" : "none"} />}
-                         <text x="0" y="0" textAnchor="middle" dy="4" className={`text-xs select-none pointer-events-none ${node.isPrimaryKey ? 'underline' : ''}`} textDecoration={node.isPrimaryKey ? "underline" : "none"}>{node.label}</text>
+                         <text x="0" y="0" textAnchor="middle" dy="4" fill={textColor} className={`text-xs select-none pointer-events-none ${node.isPrimaryKey ? 'underline' : ''}`} textDecoration={node.isPrimaryKey ? "underline" : "none"}>{node.label}</text>
                      </>
                      )}
                      {node.type === 'RELATIONSHIP' && (
                      <>
                          <polygon points="0,-40 60,0 0,40 -60,0" fill={highlightFill} stroke={highlightStroke} strokeWidth={selectedNodeIds.includes(node.id) || isMatch ? "3" : "2"} />
-                         <text x="0" y="0" textAnchor="middle" dy="4" className="text-xs font-bold select-none pointer-events-none">{node.label}</text>
+                         <text x="0" y="0" textAnchor="middle" dy="4" fill={textColor} className="text-xs font-bold select-none pointer-events-none">{node.label}</text>
                      </>
                      )}
                  </g>
@@ -1605,14 +1288,14 @@ export default function ERDiagramTool() {
              </g>
            </svg>
            
-           <div className="absolute top-4 right-4 bg-white/90 p-3 rounded-lg text-xs text-gray-500 shadow border pointer-events-none space-y-1 z-0">
-              <p className="font-bold text-gray-700 mb-2">Keyboard Shortcuts</p>
+           <div className="absolute top-4 right-4 bg-white/90 dark:bg-gray-800/90 p-3 rounded-lg text-xs text-gray-500 dark:text-gray-400 shadow border dark:border-gray-700 pointer-events-none space-y-1 z-0">
+              <p className="font-bold text-gray-700 dark:text-gray-200 mb-2">Keyboard Shortcuts</p>
               <p><strong>Ctrl+Z:</strong> Undo</p>
               <p><strong>Ctrl+Y:</strong> Redo</p>
               <p><strong>Ctrl+F:</strong> Search</p>
               <p><strong>Ctrl+A:</strong> Select All</p>
               <p><strong>Delete:</strong> Delete Selected</p>
-              <p className="font-bold text-gray-700 mt-2 mb-1">Mouse Controls</p>
+              <p className="font-bold text-gray-700 dark:text-gray-200 mt-2 mb-1">Mouse Controls</p>
               <p><strong>Space+Drag:</strong> Pan</p>
               <p><strong>Wheel:</strong> Zoom</p>
               <p><strong>Drag Box:</strong> Multi-Select</p>
@@ -1694,11 +1377,11 @@ export default function ERDiagramTool() {
         };
         
         return (
-          <div className="fixed bottom-6 right-6 z-20">
+          <div className="fixed bottom-4 md:bottom-6 right-4 md:right-6 z-20">
             <svg 
               width={minimapWidth} 
               height={minimapHeight}
-              className="border-2 border-gray-300 rounded-lg shadow-lg bg-white/90 backdrop-blur-sm cursor-pointer"
+              className="border-2 border-gray-300 dark:border-gray-700 rounded-lg shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm cursor-pointer max-w-[140px] md:max-w-none"
               onClick={handleMinimapClick}
               onMouseMove={handleViewportMouseMove}
               onMouseUp={handleViewportMouseUp}
@@ -1795,6 +1478,7 @@ export default function ERDiagramTool() {
           <span className="font-medium">Share link copied to clipboard!</span>
         </div>
       )}
+
     </div>
   );
 }
