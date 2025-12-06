@@ -428,6 +428,29 @@ export default function ERDiagramTool() {
     });
   };
 
+  // Touch version for dragging nodes
+  const handleTouchDownNode = (e: React.TouchEvent, id: string) => {
+    e.stopPropagation();
+    if (e.touches.length !== 1) return; // Only handle single touch
+    
+    const touch = e.touches[0];
+    // Selection Logic
+    let newSelection = [...selectedNodeIds];
+    if (!newSelection.includes(id)) {
+        newSelection = [id];
+    }
+    
+    setSelectedNodeIds(newSelection);
+    setInteractionMode('DRAGGING_NODES');
+    const worldPos = toWorld(touch.clientX, touch.clientY);
+    setDragStart(worldPos);
+
+    // Stop velocity for dragged nodes immediately
+    newSelection.forEach(nid => {
+        if (velocities.current[nid]) velocities.current[nid] = { vx: 0, vy: 0 };
+    });
+  };
+
   const handleMouseMove = (e: React.MouseEvent) => {
     if (interactionMode === 'PANNING') {
         const dx = e.clientX - dragStart.x;
@@ -1296,7 +1319,7 @@ export default function ERDiagramTool() {
                     key={node.id} 
                     transform={`translate(${node.x}, ${node.y})`}
                     onMouseDown={(e) => handleMouseDownNode(e, node.id)}
-                    onTouchStart={(e: any) => handleMouseDownNode(e, node.id)}
+                    onTouchStart={(e: React.TouchEvent) => handleTouchDownNode(e, node.id)}
                     className="cursor-pointer transition-opacity"
                     style={{ opacity: interactionMode === 'DRAGGING_NODES' && !selectedNodeIds.includes(node.id) ? 0.5 : 1 }}
                  >
