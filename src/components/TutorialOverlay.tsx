@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronRight, ChevronLeft, X, SkipForward } from 'lucide-react';
 import type { TutorialStep } from '../hooks/useTutorial';
 
