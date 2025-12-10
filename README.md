@@ -1,170 +1,150 @@
-# ER Diagram Builder 🗂️
+# ER Diagram Builder
 
-An interactive Entity-Relationship diagram builder with real-time physics simulation, built with React, TypeScript, and Tailwind CSS.
+An interactive web-based Entity-Relationship (ER) diagram editor built with React and TypeScript. Create, visualize, and manage database schemas with an intuitive drag-and-drop interface.
 
-## 🌟 Features
+## Features
 
-### Core Functionality
-- **Visual ER Modeling** - Create entities, relationships, and attributes using Chen notation
-- **Interactive Canvas** - Drag, pan, zoom, and organize your diagrams intuitively
-- **Physics Engine** - Automatic layout with configurable force-directed graph simulation
-- **Multi-Selection** - Select and move multiple nodes simultaneously with box selection
-- **Primary Keys** - Mark attributes as primary keys with visual indicators
+- **Interactive Canvas**: Drag entities and attributes freely on an infinite canvas
+- **Entity & Relationship Management**: Create entities, attributes, and relationships with custom properties
+- **Physics Simulation**: Automatic layout adjustment with realistic physics forces (repulsion, springs, damping)
+- **Touch Support**: Full support for touch interactions on mobile and tablet devices
+  - Single-finger panning and node dragging
+  - Two-finger pinch zoom
+- **Minimap**: Visual overview of your entire diagram with viewport tracking
+- **Grid Snapping**: Precise node alignment with optional grid snapping
+- **Interactive Tutorial**: Step-by-step guided tour for new users with spotlight effect
+- **Responsive Design**: Optimized for desktop, tablet, and mobile screens
+- **Dark Mode**: Built-in dark theme support
+- **Export Functionality**: Share and save your diagrams
+- **Undo/Redo**: Full history management for your changes
 
-### Chen Notation Support
-- **Weak Entities** - Double-bordered rectangles for weak entity sets
-- **Multivalued Attributes** - Double-bordered ellipses for attributes with multiple values
-- **Derived Attributes** - Dashed borders for computed attributes
+## Getting Started
 
-### Advanced Controls
-- **Pan & Zoom** - Space + Drag or Middle Click to pan, Mouse Wheel to zoom
-- **Zoom to Fit** - Automatically fit entire diagram in view with one click
-- **Grid Snapping** - Align nodes to 10px, 20px, or 40px grid with optional grid visibility
-- **Minimap Navigation** - Overview panel in bottom-right corner with click/drag navigation
-- **Box Selection** - Drag to select multiple items
-- **Multi-Select** - Ctrl/Cmd + Click to add items to selection
-- **Live Editing** - Click any node to edit its properties in the sidebar
+### Prerequisites
 
-### Undo/Redo System
-- **50-Action History** - Full undo/redo support with Ctrl+Z/Ctrl+Y
-- **Non-destructive** - Safely experiment with your diagram layout
+- Node.js 16+ and npm/yarn
+- Modern web browser with ES6+ support
 
-### Search & Filter
-- **Quick Search** - Find entities, relationships, and attributes instantly (Ctrl+F)
-- **Visual Highlighting** - Matching items highlighted in blue for easy identification
+### Installation
 
-### Data Management
-- **Export/Import** - Save diagrams as JSON files
-- **Multiple Export Formats** - PNG (high-quality 2x), JPEG, SVG, PDF
-- **Share Link** - Generate compressed URLs to share diagrams instantly
-- **Real-time Updates** - All changes reflect immediately on the canvas
+1. Clone the repository:
+```bash
+git clone https://github.com/anpapag1/er-tool.git
+cd er-tool
+```
 
-### Physics Configuration
-Fine-tune the automatic layout with adjustable parameters:
-- Repulsion strength between nodes
-- Target distance for connections
-- Collision radius
-- Spring stiffness
-- Damping (friction)
+2. Install dependencies:
+```bash
+npm install
+```
 
-## 🚀 Live Demo
+3. Start the development server:
+```bash
+npm run dev
+```
 
-Visit the live application: [https://anpapag1.github.io/er-tool/](https://anpapag1.github.io/er-tool/)
+The application will be available at `http://localhost:5174`
 
-## 🛠️ Tech Stack
+## Usage
+
+### Creating Entities
+1. Click the "Entity" button in the header to add a new entity
+2. Click on the canvas to place it
+3. Edit the entity name and add attributes in the sidebar
+
+### Adding Attributes
+1. Select an entity
+2. Click "Add Attribute" in the Attributes tab
+3. Define the attribute name and properties
+
+### Creating Relationships
+1. Click the "Relationship" button
+2. Click on two entities to create a relationship between them
+3. Configure the relationship properties in the sidebar
+
+### Canvas Navigation
+- **Pan**: Click and drag on empty canvas space, or single-finger drag on mobile
+- **Zoom**: Use mouse wheel, or two-finger pinch on mobile
+- **Minimap**: Click the minimap in the bottom-right corner to jump to a location
+
+### Tutorial
+First-time users will see an interactive tutorial. Skip it anytime with the Skip button or restart it from the menu.
+
+## Tech Stack
 
 - **React 19** - UI framework
 - **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **Tailwind CSS** - Styling
-- **Lucide React** - Icon library
-- **SVG** - Canvas rendering
+- **Tailwind CSS** - Styling with dark mode support
+- **Vite** - Fast build tool and dev server
+- **SVG Canvas** - Vector-based diagram rendering
+- **localStorage** - Persistent tutorial state
 
-## 📦 Installation
+## Building for Production
+
+Build the optimized production bundle:
+```bash
+npm run build
+```
+
+The output will be in the `dist/` directory.
+
+## Deployment
+
+This project is configured for GitHub Pages deployment:
 
 ```bash
-# Clone the repository
-git clone https://github.com/anpapag1/er-tool.git
-cd er-tool
-
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Deploy to GitHub Pages
 npm run deploy
 ```
 
-## 🎮 Usage Guide
+This will build the project and push it to the `gh-pages` branch.
 
-### Creating Entities
-1. Open the **Entity** tab in the sidebar
-2. Enter entity name
-3. Add attributes (mark primary keys as needed)
-4. Click **Create Entity**
+## Architecture
 
-### Creating Relationships
-1. Switch to the **Relationship** tab
-2. Enter relationship name
-3. Select two entities to connect
-4. Set cardinality (1, N, or M) for each side
-5. Add relationship attributes (optional)
-6. Click **Connect Entities**
+### Components
+- **App.tsx** - Main application component with canvas and interaction logic
+- **Header.tsx** - Top navigation bar with controls
+- **Sidebar.tsx** - Entity/relationship editor panel
+- **TutorialOverlay.tsx** - Interactive tutorial with spotlight effect
+- **Button.tsx** - Reusable button component
 
-### Canvas Navigation
-- **Pan**: Hold Space + Drag or use Middle Mouse Button
-- **Zoom**: Mouse Wheel
-- **Select**: Click or drag box
-- **Multi-Select**: Ctrl/Cmd + Click
-- **Edit**: Click a node to edit in sidebar
-- **Move**: Drag selected nodes
+### Hooks
+- **useTutorial.ts** - Tutorial state management
+- **useHistory.ts** - Undo/Redo functionality
+- **useShare.ts** - Diagram sharing and export
 
-### Physics Control
-- Toggle physics on/off with the button in the header
-- Click the Settings icon to adjust physics parameters
-- Physics only affects attributes (entities and relationships stay fixed)
+### Physics Engine
+The canvas includes a physics simulation that:
+- Repels entities from each other to prevent overlap
+- Creates spring forces along relationships
+- Uses damping for smooth motion and settling
+- Allows manual node positioning without physics interference
 
-## 📁 Project Structure
+## Mobile Optimization
 
-```
-er-tool/
-├── src/
-│   ├── App.tsx           # Main application component
-│   ├── main.tsx          # Entry point
-│   ├── index.css         # Global styles
-│   └── assets/           # Static assets
-├── public/
-│   └── icon.svg          # Favicon
-├── dist/                 # Build output
-├── index.html            # HTML template
-├── vite.config.ts        # Vite configuration
-├── tailwind.config.js    # Tailwind configuration
-└── package.json          # Dependencies
-```
+The application is fully optimized for mobile devices:
+- Responsive layouts that adapt to screen size
+- Touch-friendly controls and larger tap targets
+- Bottom-sheet style tutorial on mobile
+- Hidden minimap spotlight effect on smaller screens
+- Optimized sidebar for one-handed use
 
-## 🎨 Keyboard Shortcuts
+## Browser Support
 
-| Action | Shortcut |
-|--------|----------|
-| Undo | `Ctrl` + `Z` |
-| Redo | `Ctrl` + `Y` |
-| Search | `Ctrl` + `F` |
-| Select All | `Ctrl` + `A` |
-| Delete Selected | `Delete` |
-| Pan Canvas | `Space` + Drag |
-| Zoom In/Out | Mouse Wheel |
-| Multi-Select | `Ctrl` + Click |
-| Deselect All | Click empty canvas |
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14+
+- Mobile browsers (iOS Safari, Chrome Mobile)
 
-## 🤝 Contributing
+## Contributing
 
-Contributions are welcome! Feel free to:
-- Report bugs
-- Suggest new features
-- Submit pull requests
+Contributions are welcome! Feel free to open issues or submit pull requests.
 
-## 📄 License
+## License
 
-ISC License - See `package.json` for details
+MIT License - feel free to use this project for personal or commercial purposes.
 
-## 👤 Author
+## Credits
 
-**anpapag1**
+Created by [@anpapag1](https://github.com/anpapag1)
 
-- GitHub: [@anpapag1](https://github.com/anpapag1)
-- Project: [er-tool](https://github.com/anpapag1/er-tool)
-
-## 🙏 Acknowledgments
-
-- Built with [Vite](https://vitejs.dev/)
-- Icons by [Lucide](https://lucide.dev/)
-- Styled with [Tailwind CSS](https://tailwindcss.com/)
-
----
-
-**Made with ❤️ for database designers and students**
+[View on GitHub](https://github.com/anpapag1/er-tool)
