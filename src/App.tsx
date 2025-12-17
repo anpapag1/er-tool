@@ -35,7 +35,7 @@ export default function ERDiagramTool() {
   const [isDraggingMinimap, setIsDraggingMinimap] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
-    return saved ? JSON.parse(saved) : false;
+    return saved ? JSON.parse(saved) : true;
   });
   
   
@@ -765,7 +765,7 @@ export default function ERDiagramTool() {
     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     rect.setAttribute('width', '100%');
     rect.setAttribute('height', '100%');
-    rect.setAttribute('fill', '#f1f5f9');
+    rect.setAttribute('fill', isDarkMode ? '#000000' : '#f1f5f9');
     svgClone.insertBefore(rect, svgClone.firstChild);
 
     const serializer = new XMLSerializer();
@@ -809,7 +809,7 @@ export default function ERDiagramTool() {
     if (!ctx) return;
 
     ctx.scale(scale, scale);
-    ctx.fillStyle = '#ffffff'; // White background for JPEG
+    ctx.fillStyle = isDarkMode ? '#000000' : '#ffffff'; // Background based on dark mode
     ctx.fillRect(0, 0, svgRect.width, svgRect.height);
     
     const img = new Image();
@@ -857,7 +857,7 @@ export default function ERDiagramTool() {
     if (!ctx) return;
 
     ctx.scale(scale, scale);
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = isDarkMode ? '#000000' : '#ffffff';
     ctx.fillRect(0, 0, svgRect.width, svgRect.height);
     
     const img = new Image();
@@ -1254,7 +1254,7 @@ export default function ERDiagramTool() {
                
                <div className="text-center px-4 relative z-10">
                  <div className="mb-8 animate-fade-in-up">
-                   <h1 className="text-5xl md:text-8xl font-bold text-white/90 mb-2 tracking-tight">
+                   <h1 className="text-5xl md:text-8xl font-bold text-black dark:text-white/90 mb-2 tracking-tight">
                      ER Diagram
                    </h1>
                    <h2 className="text-6xl md:text-9xl font-black bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 bg-clip-text text-transparent text-glow" style={{

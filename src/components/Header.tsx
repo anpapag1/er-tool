@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Share2, Pause, Play, Grid, ChevronDown, Search, Copy, Settings, FileDown, Upload, PanelLeftClose, PanelLeftOpen, Undo, Redo, X, Moon, Sun, HelpCircle } from 'lucide-react';
+import { Share2, Pause, Play, Grid, ChevronDown, Search, Copy, Settings, FileDown, Upload, PanelLeftClose, PanelLeftOpen, Undo, Redo, X, Moon, Sun } from 'lucide-react';
 import { Button } from './Button';
 import type { Node, PhysicsConfig } from '../types';
 
@@ -85,7 +85,6 @@ export default function Header({
   physicsConfig,
   setPhysicsConfig,
   onRestartTutorial,
-  onStartTutorial,
   isDarkMode,
   setIsDarkMode,
   fileInputRef: externalFileInputRef,
@@ -265,16 +264,6 @@ export default function Header({
         >
           {isDarkMode ? <Sun size={16} className="text-yellow-400" /> : <Moon size={16} className="text-gray-600" />}
         </button>
-
-        {/* Tutorial Button - Show on all screens */}
-        {onStartTutorial && (
-          <Button 
-            variant="ghost" 
-            onClick={onStartTutorial} 
-            icon={HelpCircle}
-            title="Start Tutorial" 
-          />
-        )}
 
         {/* Settings */}
         <Button 

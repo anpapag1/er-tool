@@ -73,8 +73,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setSelectedNodeIds
 }) => {
   return (
-    <div className="absolute top-0 left-0 md:top-4 md:left-4 w-full md:w-96 md:rounded-3xl bg-white/5 dark:bg-white/[0.02] backdrop-blur-3xl border border-gray-200/10 dark:border-white/5 flex flex-col shadow-2xl z-10 overflow-hidden transition-all animate-fade-in-up h-full md:h-[calc(100vh-2rem)]">
-      <div className="flex border-b border-gray-200/10 dark:border-white/5 flex-shrink-0 bg-white/[0.02] dark:bg-white/[0.01] backdrop-blur-xl">
+    <div className="absolute top-0 left-0 md:top-4 md:left-4 w-full md:w-96 md:rounded-3xl bg-white/5 dark:bg-white/[0.02] backdrop-blur-3xl flex flex-col shadow-2xl z-10 overflow-hidden transition-all animate-fade-in-up h-full md:h-[calc(100vh-2rem)] border border-white/10 dark:border-white/5" style={{scrollbarWidth: 'none', WebkitFontSmoothing: 'antialiased', backfaceVisibility: 'hidden'}}>
+      <style>{`
+        .sidebar-scroll::-webkit-scrollbar {
+          width: 0px;
+        }
+        .sidebar-scroll {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+      <div className="flex border-b border-white/10 dark:border-white/5 flex-shrink-0 bg-white/5 dark:bg-white/[0.02] backdrop-blur-xl">
         <button 
           className={`flex-1 py-2 md:py-3 text-xs md:text-sm font-medium transition-all ${
             activeTab === 'ENTITY' 
@@ -98,8 +107,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-white/[0.02] dark:bg-white/[0.01] backdrop-blur-xl">
-        <div className="p-2 md:p-4">
+      <div className="flex-1 overflow-y-scroll bg-white/5 dark:bg-white/[0.02] backdrop-blur-3xl sidebar-scroll">
+        <div className="p-2 md:p-4 pr-4">
         {selectedNodeIds.length > 1 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 bg-white/5 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200/20 dark:border-white/10">
             <MousePointer2 size={32} className="mb-2 opacity-20 md:size-12 md:mb-4" />
@@ -111,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) : (
           <>
             {activeTab === 'ENTITY' && (
-              <div className="space-y-3 md:space-y-6 pb-8 md:pb-12 overscroll-contain" onWheel={(e) => e.stopPropagation()}>
+              <div className="space-y-3 md:space-y-6 pb-8 md:pb-12" onWheel={(e) => e.stopPropagation()}>
                 <div>
                   <div className="flex justify-between items-center mb-1 md:mb-2">
                     <label className="block text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200">
