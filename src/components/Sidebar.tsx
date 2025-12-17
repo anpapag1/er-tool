@@ -73,23 +73,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setSelectedNodeIds
 }) => {
   return (
-    <div className="w-full md:w-96 bg-white dark:bg-gray-800 border-r dark:border-gray-700 border-t md:border-t-0 flex flex-col shadow-lg z-10 overflow-hidden flex-shrink-0 transition-all animate-fade-in-up md:max-h-screen max-h-[60vh]">
-      <div className="flex border-b dark:border-gray-700 flex-shrink-0">
+    <div className="absolute top-0 left-0 md:top-4 md:left-4 w-full md:w-96 md:rounded-3xl bg-white/5 dark:bg-white/[0.02] backdrop-blur-3xl border border-gray-200/10 dark:border-white/5 flex flex-col shadow-2xl z-10 overflow-hidden transition-all animate-fade-in-up h-full md:h-[calc(100vh-2rem)]">
+      <div className="flex border-b border-gray-200/10 dark:border-white/5 flex-shrink-0 bg-white/[0.02] dark:bg-white/[0.01] backdrop-blur-xl">
         <button 
-          className={`flex-1 py-2 md:py-3 text-xs md:text-sm font-medium ${
+          className={`flex-1 py-2 md:py-3 text-xs md:text-sm font-medium transition-all ${
             activeTab === 'ENTITY' 
-              ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30' 
-              : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+              ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-500 dark:border-blue-400 bg-blue-500/10 dark:bg-blue-400/10' 
+              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-white/5'
           }`} 
           onClick={() => setActiveTab('ENTITY')}
         >
           Entity
         </button>
         <button 
-          className={`flex-1 py-2 md:py-3 text-xs md:text-sm font-medium ${
+          className={`flex-1 py-2 md:py-3 text-xs md:text-sm font-medium transition-all ${
             activeTab === 'RELATIONSHIP' 
-              ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30' 
-              : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+              ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-500 dark:border-blue-400 bg-blue-500/10 dark:bg-blue-400/10' 
+              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-white/5'
           }`} 
           onClick={() => setActiveTab('RELATIONSHIP')}
           data-tutorial="relationship-tab"
@@ -98,11 +98,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      <div className="p-2 md:p-4 flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-white/[0.02] dark:bg-white/[0.01] backdrop-blur-xl">
+        <div className="p-2 md:p-4">
         {selectedNodeIds.length > 1 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500">
+          <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 bg-white/5 dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200/20 dark:border-white/10">
             <MousePointer2 size={32} className="mb-2 opacity-20 md:size-12 md:mb-4" />
-            <p className="text-sm md:text-base">{selectedNodeIds.length} items selected</p>
+            <p className="text-sm md:text-base font-medium">{selectedNodeIds.length} items selected</p>
             <Button variant="danger" className="mt-2 md:mt-4 text-xs md:text-sm py-1.5 md:py-2" onClick={deleteSelected}>
               Delete Selection
             </Button>
@@ -110,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) : (
           <>
             {activeTab === 'ENTITY' && (
-              <div className="space-y-3 md:space-y-6">
+              <div className="space-y-3 md:space-y-6 pb-8 md:pb-12 overscroll-contain" onWheel={(e) => e.stopPropagation()}>
                 <div>
                   <div className="flex justify-between items-center mb-1 md:mb-2">
                     <label className="block text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200">
@@ -127,7 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     value={newEntityLabel} 
                     onChange={(e) => setNewEntityLabel(e.target.value)} 
                     placeholder="Entity Name" 
-                    className="w-full px-2 md:px-3 py-1.5 md:py-2 border dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50 dark:bg-blue-900/20 dark:text-gray-100 text-sm md:text-base"
+                    className="w-full px-2 md:px-3 py-1.5 md:py-2 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 dark:bg-white/5 backdrop-blur-sm dark:text-gray-100 text-sm md:text-base transition-all"
                     data-tutorial="entity-input"
                   />
                   <div className="mt-1.5 md:mt-2 flex items-center gap-2">
@@ -156,9 +157,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       + Add
                     </button>
                   </div>
-                  <div className="space-y-1.5 md:space-y-2 max-h-[250px] md:max-h-[450px] overflow-y-auto pr-1 md:pr-2" data-tutorial="attributes-section">
+                  <div className="space-y-1.5 md:space-y-2" data-tutorial="attributes-section">
                     {newAttributes.map((attr, idx) => (
-                      <div key={attr.id} className="flex flex-col gap-0.5 border dark:border-gray-600 rounded p-1.5 md:p-2 bg-gray-50 dark:bg-gray-700/50">
+                      <div key={attr.id} className="flex flex-col gap-1.5 border border-gray-200/20 dark:border-white/10 rounded-lg p-1.5 md:p-2 bg-white/5 dark:bg-white/5 backdrop-blur-xl">
                         <div className="flex gap-1.5 items-center">
                           <div className="flex-1 min-w-0">
                             <input 
@@ -166,7 +167,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               value={attr.label} 
                               onChange={(e) => handleAttributeChange(idx, 'label', e.target.value)} 
                               placeholder={`Attr ${idx + 1}`} 
-                              className="w-full px-1.5 md:px-2 py-1 md:py-1.5 text-xs md:text-sm border dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 outline-none bg-white dark:bg-gray-800 dark:text-gray-100" 
+                              className="w-full px-1.5 md:px-2 py-1 md:py-1.5 text-xs md:text-sm border border-gray-200/20 dark:border-white/10 rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-white/10 dark:bg-white/5 backdrop-blur-sm dark:text-gray-100 transition-all" 
                               onKeyDown={(e) => { 
                                 if (e.key === 'Enter' && idx === newAttributes.length - 1) handleAddAttributeField(); 
                               }}
@@ -179,12 +180,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <X size={14} className="md:w-4 md:h-4" />
                           </button>
                         </div>
-                        <div className="flex gap-1 text-xs">
+                        <div className="flex gap-1.5 text-xs">
                           <div 
-                            className={`cursor-pointer px-1.5 md:px-2 py-0.5 md:py-1 rounded font-bold border transition-colors flex-shrink-0 ${
+                            className={`cursor-pointer px-1.5 md:px-2 py-0.5 md:py-1 rounded-lg font-bold border transition-colors flex-shrink-0 ${
                               attr.isPrimaryKey 
-                                ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700' 
-                                : 'bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-300 border-gray-200 dark:border-gray-500'
+                                ? 'bg-amber-500/20 dark:bg-amber-500/20 text-amber-600 dark:text-amber-300 border-amber-300/50 dark:border-amber-500/50' 
+                                : 'bg-gray-200/20 dark:bg-white/10 text-gray-600 dark:text-gray-400 border-gray-200/20 dark:border-white/10'
                             }`} 
                             onClick={() => handleAttributeChange(idx, 'isPrimaryKey', !attr.isPrimaryKey)} 
                             title="Primary Key"
@@ -192,10 +193,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             PK
                           </div>
                           <div 
-                            className={`cursor-pointer px-1.5 md:px-2 py-0.5 md:py-1 rounded font-bold border transition-colors flex-shrink-0 ${
+                            className={`cursor-pointer px-1.5 md:px-2 py-0.5 md:py-1 rounded-lg font-bold border transition-colors flex-shrink-0 ${
                               attr.isMultivalued 
-                                ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700' 
-                                : 'bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-300 border-gray-200 dark:border-gray-500'
+                                ? 'bg-purple-500/20 dark:bg-purple-500/20 text-purple-600 dark:text-purple-300 border-purple-300/50 dark:border-purple-500/50' 
+                                : 'bg-gray-200/20 dark:bg-white/10 text-gray-600 dark:text-gray-400 border-gray-200/20 dark:border-white/10'
                             }`} 
                             onClick={() => handleAttributeChange(idx, 'isMultivalued', !attr.isMultivalued)} 
                             title="Multivalued (double ellipse)"
@@ -203,10 +204,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             Multi
                           </div>
                           <div 
-                            className={`cursor-pointer px-1.5 md:px-2 py-0.5 md:py-1 rounded font-bold border transition-colors flex-shrink-0 ${
+                            className={`cursor-pointer px-1.5 md:px-2 py-0.5 md:py-1 rounded-lg font-bold border transition-colors flex-shrink-0 ${
                               attr.isDerived 
-                                ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700' 
-                                : 'bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-300 border-gray-200 dark:border-gray-500'
+                                ? 'bg-blue-500/20 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 border-blue-300/50 dark:border-blue-500/50' 
+                                : 'bg-gray-200/20 dark:bg-white/10 text-gray-600 dark:text-gray-400 border-gray-200/20 dark:border-white/10'
                             }`} 
                             onClick={() => handleAttributeChange(idx, 'isDerived', !attr.isDerived)} 
                             title="Derived (dashed)"
@@ -240,7 +241,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             {activeTab === 'RELATIONSHIP' && (
-              <div className="space-y-2 md:space-y-4">
+              <div className="space-y-2 md:space-y-4 pb-8 md:pb-12 overscroll-contain" onWheel={(e) => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-0.5 md:mb-1">
                   <label className="block text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200">
                     Relationship Name
@@ -256,10 +257,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   value={relLabel} 
                   onChange={(e) => setRelLabel(e.target.value)} 
                   placeholder="e.g. Enrolls In" 
-                  className="w-full px-2 md:px-3 py-1.5 md:py-2 border dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-800 dark:text-gray-100 text-sm md:text-base"
+                  className="w-full px-2 md:px-3 py-1.5 md:py-2 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 dark:bg-white/5 backdrop-blur-sm dark:text-gray-100 text-sm md:text-base transition-all"
                 />
                 
-                <div className="p-2 md:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-2 md:space-y-3 border dark:border-gray-600">
+                <div className="p-2 md:p-3 bg-white/40 dark:bg-white/5 backdrop-blur-sm rounded-xl space-y-2 md:space-y-3 border border-gray-200/50 dark:border-white/10">
                   <div className="flex items-end gap-1.5 md:gap-2">
                     <div className="flex-1">
                       <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-0.5 md:mb-1">
@@ -268,7 +269,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <select 
                         value={relEntity1} 
                         onChange={(e) => setRelEntity1(e.target.value)} 
-                        className="w-full px-1.5 md:px-2 py-1.5 md:py-2 border dark:border-gray-600 rounded text-xs md:text-sm bg-white dark:bg-gray-800 dark:text-gray-100"
+                        className="w-full px-1.5 md:px-2 py-1.5 md:py-2 border border-gray-200 dark:border-white/10 rounded-lg text-xs md:text-sm bg-white/70 dark:bg-white/5 backdrop-blur-sm dark:text-gray-100 transition-all"
                       >
                         <option value="">Select...</option>
                         {nodes.filter(n => n.type === 'ENTITY').map(n => (
@@ -280,7 +281,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <select 
                         value={cardinality1} 
                         onChange={e => setCardinality1(e.target.value)} 
-                        className="w-full px-1 py-1.5 md:py-2 border dark:border-gray-600 rounded text-xs md:text-sm bg-white dark:bg-gray-800 dark:text-gray-100 text-center"
+                        className="w-full px-1 py-1.5 md:py-2 border border-gray-200 dark:border-white/10 rounded-lg text-xs md:text-sm bg-white/70 dark:bg-white/5 backdrop-blur-sm dark:text-gray-100 text-center transition-all"
                       >
                         <option value="1">1</option>
                         <option value="N">N</option>
@@ -301,7 +302,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <select 
                         value={relEntity2} 
                         onChange={(e) => setRelEntity2(e.target.value)} 
-                        className="w-full px-1.5 md:px-2 py-1.5 md:py-2 border dark:border-gray-600 rounded text-xs md:text-sm bg-white dark:bg-gray-800 dark:text-gray-100"
+                        className="w-full px-1.5 md:px-2 py-1.5 md:py-2 border border-gray-200 dark:border-white/10 rounded-lg text-xs md:text-sm bg-white/70 dark:bg-white/5 backdrop-blur-sm dark:text-gray-100 transition-all"
                       >
                         <option value="">Select...</option>
                         {nodes.filter(n => n.type === 'ENTITY').map(n => (
@@ -313,7 +314,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <select 
                         value={cardinality2} 
                         onChange={e => setCardinality2(e.target.value)} 
-                        className="w-full px-1 py-1.5 md:py-2 border dark:border-gray-600 rounded text-xs md:text-sm bg-white dark:bg-gray-800 dark:text-gray-100 text-center"
+                        className="w-full px-1 py-1.5 md:py-2 border border-gray-200 dark:border-white/10 rounded-lg text-xs md:text-sm bg-white/70 dark:bg-white/5 backdrop-blur-sm dark:text-gray-100 text-center transition-all"
                       >
                         <option value="1">1</option>
                         <option value="N">N</option>
@@ -335,9 +336,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       + Add
                     </button>
                   </div>
-                  <div className="space-y-1.5 md:space-y-2 max-h-[120px] md:max-h-[150px] overflow-y-auto pr-1 md:pr-2">
+                  <div className="space-y-1.5 md:space-y-2">
                     {newAttributes.map((attr, idx) => (
-                      <div key={attr.id} className="flex flex-col gap-0.5 border dark:border-gray-600 rounded p-1.5 md:p-2 bg-gray-50 dark:bg-gray-700/50">
+                      <div key={attr.id} className="flex flex-col gap-1.5 border border-gray-200/20 dark:border-white/10 rounded-lg p-1.5 md:p-2 bg-white/5 dark:bg-white/5 backdrop-blur-xl">
                         <div className="flex gap-1.5 items-center">
                           <div className="flex-1 min-w-0">
                             <input 
@@ -345,7 +346,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               value={attr.label} 
                               onChange={(e) => handleAttributeChange(idx, 'label', e.target.value)} 
                               placeholder={`Attr ${idx + 1}`} 
-                              className="w-full px-1.5 md:px-2 py-1 md:py-1.5 text-xs md:text-sm border dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 outline-none bg-white dark:bg-gray-800 dark:text-gray-100" 
+                              className="w-full px-1.5 md:px-2 py-1 md:py-1.5 text-xs md:text-sm border border-gray-200/20 dark:border-white/10 rounded-lg focus:ring-1 focus:ring-blue-500 outline-none bg-white/10 dark:bg-white/5 backdrop-blur-sm dark:text-gray-100 transition-all" 
                               onKeyDown={(e) => { 
                                 if (e.key === 'Enter' && idx === newAttributes.length - 1) handleAddAttributeField(); 
                               }}
@@ -358,12 +359,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <X size={14} className="md:w-4 md:h-4" />
                           </button>
                         </div>
-                        <div className="flex gap-1 text-xs">
+                        <div className="flex gap-1.5 text-xs">
                           <div 
-                            className={`cursor-pointer px-1.5 md:px-2 py-0.5 md:py-1 rounded font-bold border transition-colors flex-shrink-0 ${
+                            className={`cursor-pointer px-1.5 md:px-2 py-0.5 md:py-1 rounded-lg font-bold border transition-colors flex-shrink-0 ${
                               attr.isPrimaryKey 
-                                ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700' 
-                                : 'bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-300 border-gray-200 dark:border-gray-500'
+                                ? 'bg-amber-500/20 dark:bg-amber-500/20 text-amber-600 dark:text-amber-300 border-amber-300/50 dark:border-amber-500/50' 
+                                : 'bg-gray-200/20 dark:bg-white/10 text-gray-600 dark:text-gray-400 border-gray-200/20 dark:border-white/10'
                             }`} 
                             onClick={() => handleAttributeChange(idx, 'isPrimaryKey', !attr.isPrimaryKey)} 
                             title="Primary Key"
@@ -371,10 +372,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             PK
                           </div>
                           <div 
-                            className={`cursor-pointer px-1.5 md:px-2 py-0.5 md:py-1 rounded font-bold border transition-colors flex-shrink-0 ${
+                            className={`cursor-pointer px-1.5 md:px-2 py-0.5 md:py-1 rounded-lg font-bold border transition-colors flex-shrink-0 ${
                               attr.isMultivalued 
-                                ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700' 
-                                : 'bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-300 border-gray-200 dark:border-gray-500'
+                                ? 'bg-purple-500/20 dark:bg-purple-500/20 text-purple-600 dark:text-purple-300 border-purple-300/50 dark:border-purple-500/50' 
+                                : 'bg-gray-200/20 dark:bg-white/10 text-gray-600 dark:text-gray-400 border-gray-200/20 dark:border-white/10'
                             }`} 
                             onClick={() => handleAttributeChange(idx, 'isMultivalued', !attr.isMultivalued)} 
                             title="Multivalued (double ellipse)"
@@ -382,10 +383,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             Multi
                           </div>
                           <div 
-                            className={`cursor-pointer px-1.5 md:px-2 py-0.5 md:py-1 rounded font-bold border transition-colors flex-shrink-0 ${
+                            className={`cursor-pointer px-1.5 md:px-2 py-0.5 md:py-1 rounded-lg font-bold border transition-colors flex-shrink-0 ${
                               attr.isDerived 
-                                ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700' 
-                                : 'bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-300 border-gray-200 dark:border-gray-500'
+                                ? 'bg-blue-500/20 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 border-blue-300/50 dark:border-blue-500/50' 
+                                : 'bg-gray-200/20 dark:bg-white/10 text-gray-600 dark:text-gray-400 border-gray-200/20 dark:border-white/10'
                             }`} 
                             onClick={() => handleAttributeChange(idx, 'isDerived', !attr.isDerived)} 
                             title="Derived (dashed)"
@@ -419,6 +420,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   );

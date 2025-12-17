@@ -1143,7 +1143,7 @@ export default function ERDiagramTool() {
 
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 font-sans text-slate-800 dark:text-gray-100">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-black font-sans text-slate-800 dark:text-gray-100">
       {/* Tutorial Overlay */}
       <TutorialOverlay
         isActive={tutorial.isActive}
@@ -1194,11 +1194,23 @@ export default function ERDiagramTool() {
         fileInputRef={fileInputRef}
       />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="relative w-full h-full overflow-hidden">
         
-        {/* Sidebar */}
+        {/* Main Canvas */}
+        <div ref={containerRef} className="w-full h-full bg-gray-50 dark:bg-black overflow-hidden cursor-crosshair touch-none"
+             onMouseUp={handleMouseUp}
+             onTouchEnd={handleTouchEnd}
+             onMouseMove={handleMouseMove}
+             onTouchMove={handleTouchMove}
+             onMouseDown={handleMouseDownBg}
+             onTouchStart={handleTouchStart}
+             onWheel={handleWheel}
+        >
+        
+        {/* Sidebar Overlay */}
         {isSidebarOpen && (
-          <Sidebar
+          <div className="absolute inset-0 md:inset-auto md:top-0 md:left-0 md:w-auto md:h-auto pointer-events-none md:pointer-events-auto z-10">
+            <Sidebar
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             selectedNodeIds={selectedNodeIds}
@@ -1227,19 +1239,48 @@ export default function ERDiagramTool() {
             handleSaveRelationship={handleSaveRelationship}
             deleteSelected={deleteSelected}
             setSelectedNodeIds={setSelectedNodeIds}
-          />
+            />
+          </div>
         )}
-
-        {/* Main Canvas */}
-        <div ref={containerRef} className="flex-1 bg-slate-100 dark:bg-gray-950 overflow-hidden relative cursor-crosshair touch-none"
-             onMouseUp={handleMouseUp}
-             onTouchEnd={handleTouchEnd}
-             onMouseMove={handleMouseMove}
-             onTouchMove={handleTouchMove}
-             onMouseDown={handleMouseDownBg}
-             onTouchStart={handleTouchStart}
-             onWheel={handleWheel}
-        >
+           {/* Hero Section - Show when no nodes exist */}
+           {nodes.length === 0 && (
+             <div className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-all`} style={{
+               left: isSidebarOpen ? '24rem' : '0',
+               right: '0'
+             }}>
+               {/* Gradient Orbs Background */}
+               <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+               <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+               
+               <div className="text-center px-4 relative z-10">
+                 <div className="mb-8 animate-fade-in-up">
+                   <h1 className="text-5xl md:text-8xl font-bold text-white/90 mb-2 tracking-tight">
+                     ER Diagram
+                   </h1>
+                   <h2 className="text-6xl md:text-9xl font-black bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 bg-clip-text text-transparent text-glow" style={{
+                     backgroundSize: '200% 100%',
+                     animation: 'gradient 8s ease infinite'
+                   }}>
+                     BUILDER
+                   </h2>
+                 </div>
+                 <p className="text-gray-400 text-base md:text-xl max-w-2xl mx-auto mb-10 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+                   Create beautiful Entity-Relationship diagrams with an intuitive drag-and-drop interface
+                 </p>
+                 {tutorial.currentStep === null && (
+                   <div className="flex justify-center pointer-events-auto animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                     <button
+                       onClick={tutorial.startTutorial}
+                       className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-full text-white font-medium transition-all duration-300 hover:scale-105 shadow-2xl shadow-purple-500/50"
+                     >
+                       Start Tutorial
+                     </button>
+                   </div>
+                 )}
+               </div>
+             </div>
+           )}
+           
            {/* Grid */}
            {showGrid && (
            <div className="absolute inset-0 opacity-25 pointer-events-none" 
@@ -1252,11 +1293,11 @@ export default function ERDiagramTool() {
            )}
 
            {/* Toolbar */}
-           <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 flex bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 p-1 gap-1 z-20 flex-wrap w-auto md:w-auto" data-tutorial="zoom-controls">
-               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom * 1.2 }))} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-300 transition-colors" title="Zoom In (Ctrl +)"><ZoomIn size={18} className="md:w-5 md:h-5"/></button>
-               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom / 1.2 }))} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-300 transition-colors" title="Zoom Out (Ctrl -)"><ZoomOut size={18} className="md:w-5 md:h-5"/></button>
-               <button onClick={handleZoomToFit} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-300 transition-colors" title="Zoom to Fit"><Maximize size={18} className="md:w-5 md:h-5"/></button>
-               <button onClick={() => setShowMinimap(!showMinimap)} className={`p-2 rounded text-gray-600 dark:text-gray-300 transition-colors ${showMinimap ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`} title="Toggle Minimap"><Map size={18} className="md:w-5 md:h-5"/></button>
+           <div className={`absolute bottom-4 md:bottom-6 left-4 flex bg-white/10 dark:bg-white/5 backdrop-blur-3xl rounded-2xl shadow-2xl border border-gray-200/20 dark:border-white/10 p-1 gap-1 z-20 flex-wrap w-auto transition-all ${isSidebarOpen ? 'md:left-[calc(24rem+2rem)]' : 'md:left-6'}`} data-tutorial="zoom-controls">
+               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom * 1.2 }))} className="p-2 hover:bg-gray-100/50 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-gray-200 transition-all" title="Zoom In (Ctrl +)"><ZoomIn size={18} className="md:w-5 md:h-5"/></button>
+               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom / 1.2 }))} className="p-2 hover:bg-gray-100/50 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-gray-200 transition-all" title="Zoom Out (Ctrl -)"><ZoomOut size={18} className="md:w-5 md:h-5"/></button>
+               <button onClick={handleZoomToFit} className="p-2 hover:bg-gray-100/50 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-gray-200 transition-all" title="Zoom to Fit"><Maximize size={18} className="md:w-5 md:h-5"/></button>
+               <button onClick={() => setShowMinimap(!showMinimap)} className={`p-2 rounded-xl text-gray-700 dark:text-gray-200 transition-all ${showMinimap ? 'bg-blue-500/20 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300' : 'hover:bg-gray-100/50 dark:hover:bg-white/10'}`} title="Toggle Minimap"><Map size={18} className="md:w-5 md:h-5"/></button>
            </div>
            
            <svg 
@@ -1399,7 +1440,7 @@ export default function ERDiagramTool() {
              </g>
            </svg>
            
-           <div className="absolute top-4 right-4 bg-white/90 dark:bg-gray-800/90 p-3 rounded-lg text-xs text-gray-500 dark:text-gray-400 shadow border dark:border-gray-700 pointer-events-none space-y-1 z-0">
+           <div className="absolute top-4 right-4 bg-white/5 dark:bg-white/[0.02] backdrop-blur-3xl p-4 rounded-2xl text-xs text-gray-600 dark:text-gray-400 border border-gray-200/20 dark:border-white/10 pointer-events-none space-y-1 z-10 max-w-xs shadow-lg">
               <p className="font-bold text-gray-700 dark:text-gray-200 mb-2">Keyboard Shortcuts</p>
               <p><strong>Ctrl+Z:</strong> Undo</p>
               <p><strong>Ctrl+Y:</strong> Redo</p>
@@ -1413,10 +1454,10 @@ export default function ERDiagramTool() {
               <p><strong>Ctrl+Click:</strong> Add to Selection</p>
            </div>
         </div>
-      </div>
-      
-      {/* Minimap */}
-      {showMinimap && nodes.length > 0 && (() => {
+        
+        {/* All canvas overlays - inside the main canvas container */}
+        {/* Minimap */}
+        {showMinimap && nodes.length > 0 && (() => {
         // Calculate bounding box of all nodes
         const minX = Math.min(...nodes.map(n => n.x));
         const maxX = Math.max(...nodes.map(n => n.x));
@@ -1492,7 +1533,7 @@ export default function ERDiagramTool() {
             <svg 
               width={minimapWidth} 
               height={minimapHeight}
-              className="border-2 border-gray-300 dark:border-gray-700 rounded-lg shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm cursor-pointer max-w-[140px] md:max-w-none"
+              className="border border-gray-200/20 dark:border-white/10 rounded-2xl shadow-2xl bg-white/10 dark:bg-white/5 backdrop-blur-3xl cursor-pointer"
               onClick={handleMinimapClick}
               onMouseMove={handleViewportMouseMove}
               onMouseUp={handleViewportMouseUp}
@@ -1584,7 +1625,7 @@ export default function ERDiagramTool() {
       
       {/* Credits - Always visible */}
       <div className="fixed bottom-4 md:bottom-5 right-4 md:right-6 z-15">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 dark:bg-gray-900/50 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 shadow-lg hover:shadow-xl transition-all duration-200">
           <span className="text-xs text-gray-600 dark:text-gray-400">By</span>
           <a 
             href="https://github.com/anpapag1" 
@@ -1611,12 +1652,14 @@ export default function ERDiagramTool() {
       
       {/* Toast Notification */}
       {showToast && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 animate-fade-in">
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900/90 dark:bg-gray-900/80 backdrop-blur-xl text-white px-6 py-3 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-2 z-50 animate-fade-in">
           <Check size={20} className="text-green-400" />
           <span className="font-medium">Share link copied to clipboard!</span>
         </div>
       )}
-
+      
+      </div>
+      {/* End Main Canvas */}
     </div>
   );
 }

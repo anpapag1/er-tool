@@ -96,7 +96,7 @@ export default function Header({
   const fileInputRef = externalFileInputRef || internalFileInputRef;
 
   return (
-    <header className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-2 md:px-4 py-2 md:py-3 flex items-center justify-between shadow-sm z-10 relative">
+    <header className="bg-white/80 dark:bg-black border-b border-gray-200/50 dark:border-white/10 px-2 md:px-4 py-2 md:py-3 flex items-center justify-between shadow-2xl z-30 relative">
       {/* Left Section */}
       <div className="flex items-center gap-2 md:gap-3 min-w-0">
         <button 
@@ -107,14 +107,16 @@ export default function Header({
           {isSidebarOpen ? <PanelLeftClose size={18} className="md:w-5 md:h-5" /> : <PanelLeftOpen size={18} className="md:w-5 md:h-5" />}
         </button>
 
-        <div className="flex items-center gap-1 md:gap-2 pl-2 border-l border-gray-200 dark:border-gray-700 min-w-0">
-          <Share2 className="text-blue-600 dark:text-blue-400 flex-shrink-0" size={18} />
-          <h1 className="text-sm md:text-lg font-bold text-gray-800 dark:text-gray-100 truncate">ER Diagram</h1>
+        <div className="flex items-center gap-1 md:gap-2 pl-2 border-l border-gray-200/50 dark:border-white/10 min-w-0">
+          <Share2 className="text-blue-500 dark:text-blue-400 flex-shrink-0" size={18} />
+          <h1 className="text-sm md:text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 bg-clip-text text-transparent truncate" style={{
+            backgroundSize: '200% 100%'
+          }}>ER Diagram</h1>
         </div>
       </div>
 
       {/* Right Section - Buttons */}
-      <div className="flex items-center gap-1 overflow-x-auto flex-shrink-0">
+      <div className="flex items-center gap-1 flex-shrink-0">
         {/* Undo/Redo - Hide on small screens */}
         <div className="hidden sm:flex items-center gap-1">
           <Button 
@@ -168,9 +170,9 @@ export default function Header({
           </button>
           
           {isGridMenuOpen && (
-            <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl border dark:border-gray-700 w-40 md:w-48 z-50 text-xs md:text-sm">
-              <div className="p-2 border-b dark:border-gray-700">
-                <label className="flex items-center justify-between px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+            <div className="absolute top-full left-0 mt-1 bg-white/90 dark:bg-gray-900/80 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 w-40 md:w-48 z-50 text-xs md:text-sm">
+              <div className="p-2 border-b border-gray-200/50 dark:border-white/10">
+                <label className="flex items-center justify-between px-2 py-1.5 hover:bg-gray-100/50 dark:hover:bg-white/5 rounded-xl cursor-pointer transition-all">
                   <span className="text-xs">Enable Snapping</span>
                   <input 
                     type="checkbox" 
@@ -179,7 +181,7 @@ export default function Header({
                     className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
-                <label className="flex items-center justify-between px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                <label className="flex items-center justify-between px-2 py-1.5 hover:bg-gray-100/50 dark:hover:bg-white/5 rounded-xl cursor-pointer transition-all">
                   <span className="text-xs">Show Grid</span>
                   <input 
                     type="checkbox" 
@@ -195,9 +197,9 @@ export default function Header({
                   <button 
                     key={size}
                     onClick={() => { setGridSize(size); setIsGridMenuOpen(false); }}
-                    className={`w-full text-left px-2 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 rounded transition-colors ${
+                    className={`w-full text-left px-2 py-1.5 text-xs hover:bg-gray-100/50 dark:hover:bg-white/5 rounded-xl transition-all ${
                       gridSize === size 
-                        ? 'bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-medium' 
+                        ? 'bg-blue-500/20 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300 font-medium' 
                         : ''
                     }`}
                   >
@@ -214,7 +216,7 @@ export default function Header({
 
         {/* Search - Compact on mobile */}
         {isSearchOpen && (
-          <div className="flex items-center gap-1 md:gap-2 bg-gray-50 dark:bg-gray-700 border dark:border-gray-600 rounded-lg px-1 md:px-2 py-1 shadow-sm">
+          <div className="flex items-center gap-1 md:gap-2 bg-white/70 dark:bg-gray-900/50 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-xl px-1 md:px-2 py-1 shadow-lg">
             <Search size={14} className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
             <input 
               type="text" 
@@ -258,7 +260,7 @@ export default function Header({
         {/* Dark Mode */}
         <button 
           onClick={() => setIsDarkMode(!isDarkMode)} 
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0"
+          className="p-2 hover:bg-gray-100/50 dark:hover:bg-white/10 rounded-xl transition-all flex-shrink-0"
           title="Toggle Dark Mode"
         >
           {isDarkMode ? <Sun size={16} className="text-yellow-400" /> : <Moon size={16} className="text-gray-600" />}
@@ -296,34 +298,34 @@ export default function Header({
           </button>
           
           {isExportMenuOpen && (
-            <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-xl border dark:border-gray-700 w-32 md:w-40 z-50 text-xs md:text-sm">
+            <div className="absolute top-full right-0 mt-1 bg-white/90 dark:bg-gray-900/80 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 w-32 md:w-40 z-50 text-xs md:text-sm overflow-hidden">
               <button 
                 onClick={() => { onExportJson(); setIsExportMenuOpen(false); }} 
-                className="w-full text-left px-3 md:px-4 py-1.5 md:py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-t-lg transition-colors"
+                className="w-full text-left px-3 md:px-4 py-1.5 md:py-2 hover:bg-gray-100/50 dark:hover:bg-white/5 transition-all"
               >
                 JSON
               </button>
               <button 
                 onClick={() => { onExportPng(); setIsExportMenuOpen(false); }} 
-                className="w-full text-left px-3 md:px-4 py-1.5 md:py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full text-left px-3 md:px-4 py-1.5 md:py-2 hover:bg-gray-100/50 dark:hover:bg-white/5 transition-all"
               >
                 PNG
               </button>
               <button 
                 onClick={() => { onExportJpeg(); setIsExportMenuOpen(false); }} 
-                className="w-full text-left px-3 md:px-4 py-1.5 md:py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full text-left px-3 md:px-4 py-1.5 md:py-2 hover:bg-gray-100/50 dark:hover:bg-white/5 transition-all"
               >
                 JPEG
               </button>
               <button 
                 onClick={() => { onExportSvg(); setIsExportMenuOpen(false); }} 
-                className="w-full text-left px-3 md:px-4 py-1.5 md:py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full text-left px-3 md:px-4 py-1.5 md:py-2 hover:bg-gray-100/50 dark:hover:bg-white/5 transition-all"
               >
                 SVG
               </button>
               <button 
                 onClick={() => { onExportPdf(); setIsExportMenuOpen(false); }} 
-                className="w-full text-left px-3 md:px-4 py-1.5 md:py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-b-lg transition-colors"
+                className="w-full text-left px-3 md:px-4 py-1.5 md:py-2 hover:bg-gray-100/50 dark:hover:bg-white/5 transition-all"
               >
                 PDF
               </button>
@@ -351,7 +353,7 @@ export default function Header({
 
       {/* Physics Settings Panel - Mobile responsive */}
       {isSettingsOpen && (
-        <div className="absolute top-full right-2 md:right-4 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border dark:border-gray-700 p-3 md:p-4 w-[calc(100vw-1rem)] md:w-72 z-50 max-h-[80vh] overflow-y-auto">
+        <div className="absolute top-full right-2 md:right-4 mt-2 bg-white/90 dark:bg-gray-900/80 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 p-3 md:p-4 w-[calc(100vw-1rem)] md:w-72 z-50 max-h-[80vh] overflow-y-auto">
           <div className="flex justify-between items-center mb-2 md:mb-3">
             <h3 className="font-bold text-gray-700 dark:text-gray-200 text-xs md:text-sm">Physics Settings</h3>
             <button 
@@ -415,13 +417,13 @@ export default function Header({
               />
             </div>
 
-            <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-gray-200/50 dark:border-white/10">
               <button 
                 onClick={() => {
                   onRestartTutorial();
                   setIsSettingsOpen(false);
                 }}
-                className="w-full py-2 px-3 md:px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs md:text-sm font-medium transition-colors"
+                className="w-full py-2 px-3 md:px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs md:text-sm font-medium transition-all shadow-lg hover:shadow-xl"
               >
                 Restart Tutorial
               </button>

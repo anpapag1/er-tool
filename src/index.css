@@ -33,10 +33,119 @@ body {
   100% { transform: scale(1); }
 }
 
+@keyframes gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
 .animate-fade-in-up {
-  animation: fade-in-up 200ms ease-out;
+  animation: fade-in-up 0.6s ease-out forwards;
+  opacity: 0;
 }
 
 .animate-pop-in {
   animation: pop-in 220ms ease-out;
+}
+
+.animate-gradient-x {
+  animation: gradient-x 8s ease infinite;
+  background-size: 200% 100%;
+}
+
+/* Glow effects for modern aesthetic */
+.glow-blue {
+  filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5));
+}
+
+.glow-purple {
+  filter: drop-shadow(0 0 30px rgba(147, 51, 234, 0.6));
+}
+
+.text-glow {
+  text-shadow: 0 0 40px rgba(147, 51, 234, 0.5),
+               0 0 80px rgba(59, 130, 246, 0.3);
+}
+
+/* Tutorial animations */
+@keyframes tutorial-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px 2px rgba(96, 165, 250, 0.3), 0 0 40px 6px rgba(168, 85, 247, 0.2);
+  }
+  50% { 
+    box-shadow: 0 0 30px 4px rgba(96, 165, 250, 0.5), 0 0 60px 10px rgba(168, 85, 247, 0.3);
+  }
+}
+
+@keyframes tutorial-shine {
+  0%, 100% { 
+    background-position: 0% 50%;
+  }
+  50% { 
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes float-up {
+  0%, 100% { 
+    transform: translateY(0px);
+  }
+  50% { 
+    transform: translateY(-8px);
+  }
+}
+
+.animate-tutorial-glow {
+  animation: tutorial-glow 3s ease-in-out infinite;
+}
+
+.animate-tutorial-shine {
+  animation: tutorial-shine 3s ease-in-out infinite;
+  background-size: 200% 100%;
+}
+
+.animate-float-up {
+  animation: float-up 2s ease-in-out infinite;
+}
+
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: rgba(255, 255, 255, 0.35);
+  background-clip: padding-box;
+}
+
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+*:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
