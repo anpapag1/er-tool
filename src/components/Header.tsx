@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Share2, Pause, Play, Grid, ChevronDown, Search, Copy, Settings, FileDown, Upload, PanelLeftClose, PanelLeftOpen, Undo, Redo, X, Moon, Sun } from 'lucide-react';
+import { Pause, Play, Grid, ChevronDown, Search, Copy, Settings, FileDown, Upload, PanelLeftClose, PanelLeftOpen, Undo, Redo, X, Moon, Sun } from 'lucide-react';
 import { Button } from './Button';
 import type { Node, PhysicsConfig } from '../types';
 
@@ -40,13 +40,11 @@ interface HeaderProps {
   onExportPdf: () => void;
   onLoad: (e: React.ChangeEvent<HTMLInputElement>) => void;
   
-  // Settings & Tutorial
+  // Settings
   isSettingsOpen: boolean;
   setIsSettingsOpen: (open: boolean) => void;
   physicsConfig: PhysicsConfig;
   setPhysicsConfig: (config: PhysicsConfig) => void;
-  onRestartTutorial: () => void;
-  onStartTutorial?: () => void;
   
   // Theme
   isDarkMode: boolean;
@@ -84,7 +82,6 @@ export default function Header({
   setIsSettingsOpen,
   physicsConfig,
   setPhysicsConfig,
-  onRestartTutorial,
   isDarkMode,
   setIsDarkMode,
   fileInputRef: externalFileInputRef,
@@ -107,10 +104,10 @@ export default function Header({
         </button>
 
         <div className="flex items-center gap-1 md:gap-2 pl-2 border-l border-gray-200/50 dark:border-white/10 min-w-0">
-          <Share2 className="text-blue-500 dark:text-blue-400 flex-shrink-0" size={18} />
+          <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="logo" className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0 rounded-md" />
           <h1 className="text-sm md:text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 bg-clip-text text-transparent truncate" style={{
             backgroundSize: '200% 100%'
-          }}>ER Diagram</h1>
+          }}> ER-Tool</h1>
         </div>
       </div>
 
@@ -406,17 +403,6 @@ export default function Header({
               />
             </div>
 
-            <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-gray-200/50 dark:border-white/10">
-              <button 
-                onClick={() => {
-                  onRestartTutorial();
-                  setIsSettingsOpen(false);
-                }}
-                className="w-full py-2 px-3 md:px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs md:text-sm font-medium transition-all shadow-lg hover:shadow-xl"
-              >
-                Restart Tutorial
-              </button>
-            </div>
           </div>
         </div>
       )}

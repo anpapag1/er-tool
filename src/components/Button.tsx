@@ -18,7 +18,7 @@ export const Button: React.FC<ButtonProps> = ({
   variant = "primary",
   icon: Icon,
   title,
-  disabled
+  disabled,
 }) => {
   // Determine padding based on content
   const hasText = !!children;

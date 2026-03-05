@@ -1,7 +1,90 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Check, X, Link, MousePointer2 } from 'lucide-react';
 import type { Node, AttributeInput } from '../types';
 import { Button } from './Button';
+
+interface EntitySelectProps {
+  value: string;
+  onChange: (id: string) => void;
+  entities: Node[];
+  accent: 'blue' | 'purple';
+}
+
+const EntitySelect: React.FC<EntitySelectProps> = ({ value, onChange, entities, accent }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = entities.find(n => n.id === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const handle = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as globalThis.Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, [open]);
+
+  const isBlue = accent === 'blue';
+  const openBorder = isBlue ? 'border-blue-400 dark:border-blue-500' : 'border-purple-400 dark:border-purple-500';
+  const openShadow = isBlue ? 'shadow-blue-500/10' : 'shadow-purple-500/10';
+  const activeItem = isBlue
+    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 font-semibold'
+    : 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 font-semibold';
+  const hoverItem = isBlue
+    ? 'hover:bg-blue-50/50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300'
+    : 'hover:bg-purple-50/50 dark:hover:bg-purple-900/20 hover:text-purple-700 dark:hover:text-purple-300';
+
+  return (
+    <div ref={ref} className="relative flex-1">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className={`w-full flex items-center justify-between pl-3 pr-2.5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm bg-white/50 dark:bg-white/5 backdrop-blur-sm border transition-all shadow-sm cursor-pointer ${
+          open
+            ? `${openBorder} shadow-lg ${openShadow}`
+            : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20'
+        }`}
+      >
+        <span className={`truncate mr-1 ${
+          selected ? 'text-gray-800 dark:text-gray-100 font-medium' : 'text-gray-400 dark:text-gray-500'
+        }`}>
+          {selected ? selected.label : 'Select entity…'}
+        </span>
+        <svg
+          className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${
+            open ? 'rotate-180 text-gray-600 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'
+          }`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-xl border border-gray-200 dark:border-white/15 bg-white dark:bg-gray-800 shadow-2xl overflow-hidden">
+          {entities.length === 0 ? (
+            <div className="px-3 py-4 text-xs text-gray-400 dark:text-gray-500 text-center italic">No entities on canvas yet</div>
+          ) : (
+            entities.map((n, i) => (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => { onChange(n.id); setOpen(false); }}
+                className={`w-full text-left px-3 py-2 md:py-2.5 text-xs md:text-sm transition-colors ${
+                  i > 0 ? 'border-t border-gray-50 dark:border-white/[0.04]' : ''
+                } ${
+                  n.id === value ? activeItem : `text-gray-700 dark:text-gray-200 ${hoverItem}`
+                }`}
+              >
+                {n.label}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface SidebarProps {
   activeTab: 'ENTITY' | 'RELATIONSHIP';
@@ -70,10 +153,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   handleSaveEntity,
   handleSaveRelationship,
   deleteSelected,
-  setSelectedNodeIds
+  setSelectedNodeIds,
 }) => {
   return (
-    <div className="absolute top-0 left-0 md:top-4 md:left-4 w-full md:w-96 md:rounded-3xl bg-white/5 dark:bg-white/[0.02] backdrop-blur-3xl flex flex-col shadow-2xl z-10 overflow-hidden transition-all animate-fade-in-up h-full md:h-[calc(100vh-2rem)] border border-white/10 dark:border-white/5" style={{scrollbarWidth: 'none', WebkitFontSmoothing: 'antialiased', backfaceVisibility: 'hidden'}}>
+    <div className="pointer-events-auto absolute top-0 left-0 md:top-4 md:left-4 w-full md:w-96 md:rounded-3xl bg-white/5 dark:bg-white/[0.02] backdrop-blur-3xl flex flex-col shadow-2xl z-10 overflow-hidden transition-all animate-fade-in-up h-full md:h-[calc(100vh-2rem)] border border-white/10 dark:border-white/5" style={{scrollbarWidth: 'none', WebkitFontSmoothing: 'antialiased', backfaceVisibility: 'hidden'}}>
       <style>{`
         .sidebar-scroll::-webkit-scrollbar {
           width: 0px;
@@ -100,7 +183,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-500 dark:border-blue-400 bg-blue-500/10 dark:bg-blue-400/10' 
               : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-white/5'
           }`} 
-          onClick={() => setActiveTab('RELATIONSHIP')}
+          onClick={() => {
+            if (editingEntityId) setSelectedNodeIds([]);
+            setActiveTab('RELATIONSHIP');
+          }}
           data-tutorial="relationship-tab"
         >
           Relationship
@@ -154,7 +240,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 </div>
                 
-                <div>
+                <div data-tutorial="attributes-panel">
                   <div className="flex items-center justify-between mb-1 md:mb-2">
                     <label className="block text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200">
                       {editingEntityId ? "Edit Attributes" : "2. Attributes"}
@@ -239,9 +325,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </Button>
                 {editingEntityId && (
                   <Button 
-                    onClick={() => setSelectedNodeIds([])} 
-                    className="w-full text-xs md:text-sm py-1.5 md:py-2" 
+                    onClick={() => setSelectedNodeIds([])}
+                    className="w-full text-xs md:text-sm py-1.5 md:py-2"
                     variant="ghost"
+                    data-tutorial="cancel-edit-btn"
                   >
                     Cancel Edit
                   </Button>
@@ -250,7 +337,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             {activeTab === 'RELATIONSHIP' && (
-              <div className="space-y-2 md:space-y-4 pb-8 md:pb-12 overscroll-contain" onWheel={(e) => e.stopPropagation()}>
+              <div className="space-y-2 md:space-y-4 pb-8 md:pb-12 overscroll-contain" onWheel={(e) => e.stopPropagation()} data-tutorial="relationship-form">
                 <div className="flex justify-between items-center mb-0.5 md:mb-1">
                   <label className="block text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200">
                     Relationship Name
@@ -269,66 +356,76 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-full px-2 md:px-3 py-1.5 md:py-2 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 dark:bg-white/5 backdrop-blur-sm dark:text-gray-100 text-sm md:text-base transition-all"
                 />
                 
-                <div className="p-2 md:p-3 bg-white/40 dark:bg-white/5 backdrop-blur-sm rounded-xl space-y-2 md:space-y-3 border border-gray-200/50 dark:border-white/10">
-                  <div className="flex items-end gap-1.5 md:gap-2">
-                    <div className="flex-1">
-                      <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-0.5 md:mb-1">
-                        Entity 1
-                      </label>
-                      <select 
-                        value={relEntity1} 
-                        onChange={(e) => setRelEntity1(e.target.value)} 
-                        className="w-full px-1.5 md:px-2 py-1.5 md:py-2 border border-gray-200 dark:border-white/10 rounded-lg text-xs md:text-sm bg-white/70 dark:bg-white/5 backdrop-blur-sm dark:text-gray-100 transition-all"
-                      >
-                        <option value="">Select...</option>
-                        {nodes.filter(n => n.type === 'ENTITY').map(n => (
-                          <option key={n.id} value={n.id}>{n.label}</option>
+                <div className="rounded-2xl border border-white/15 dark:border-white/10 bg-gradient-to-b from-white/20 to-white/5 dark:from-white/5 dark:to-transparent backdrop-blur-sm overflow-visible">
+                  {/* Entity 1 */}
+                  <div className="p-3 md:p-4">
+                    <label className="block text-xs font-bold uppercase tracking-widest text-blue-500 dark:text-blue-400 mb-2">
+                      Entity 1
+                    </label>
+                    <div className="flex gap-2 items-center">
+                      <EntitySelect
+                          value={relEntity1}
+                          onChange={setRelEntity1}
+                          entities={nodes.filter(n => n.type === 'ENTITY')}
+                          accent="blue"
+                        />
+                      <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 flex-shrink-0 shadow-sm">
+                        {(['1', 'N', 'M'] as const).map(card => (
+                          <button
+                            key={card}
+                            type="button"
+                            onClick={() => setCardinality1(card)}
+                            className={`w-8 md:w-9 py-2 md:py-2.5 text-xs font-black transition-all ${
+                              cardinality1 === card
+                                ? 'bg-blue-500 dark:bg-blue-600 text-white shadow-inner'
+                                : 'bg-white/50 dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-500 dark:hover:text-blue-400'
+                            }`}
+                          >
+                            {card}
+                          </button>
                         ))}
-                      </select>
-                    </div>
-                    <div className="w-12 md:w-16">
-                      <select 
-                        value={cardinality1} 
-                        onChange={e => setCardinality1(e.target.value)} 
-                        className="w-full px-1 py-1.5 md:py-2 border border-gray-200 dark:border-white/10 rounded-lg text-xs md:text-sm bg-white/70 dark:bg-white/5 backdrop-blur-sm dark:text-gray-100 text-center transition-all"
-                      >
-                        <option value="1">1</option>
-                        <option value="N">N</option>
-                        <option value="M">M</option>
-                      </select>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="flex justify-center text-gray-400 dark:text-gray-500">
-                    <Link size={14} className="md:w-4 md:h-4" />
-                  </div>
-                  
-                  <div className="flex items-end gap-1.5 md:gap-2">
-                    <div className="flex-1">
-                      <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-0.5 md:mb-1">
-                        Entity 2
-                      </label>
-                      <select 
-                        value={relEntity2} 
-                        onChange={(e) => setRelEntity2(e.target.value)} 
-                        className="w-full px-1.5 md:px-2 py-1.5 md:py-2 border border-gray-200 dark:border-white/10 rounded-lg text-xs md:text-sm bg-white/70 dark:bg-white/5 backdrop-blur-sm dark:text-gray-100 transition-all"
-                      >
-                        <option value="">Select...</option>
-                        {nodes.filter(n => n.type === 'ENTITY').map(n => (
-                          <option key={n.id} value={n.id}>{n.label}</option>
-                        ))}
-                      </select>
+
+                  {/* Divider with connector badge */}
+                  <div className="flex items-center gap-2 px-3 md:px-4">
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-white/15" />
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 dark:bg-blue-400/10 border border-blue-300/30 dark:border-blue-400/20 text-blue-500 dark:text-blue-400">
+                      <Link size={11} />
+                      <span className="text-xs font-bold tracking-wide">relates to</span>
                     </div>
-                    <div className="w-12 md:w-16">
-                      <select 
-                        value={cardinality2} 
-                        onChange={e => setCardinality2(e.target.value)} 
-                        className="w-full px-1 py-1.5 md:py-2 border border-gray-200 dark:border-white/10 rounded-lg text-xs md:text-sm bg-white/70 dark:bg-white/5 backdrop-blur-sm dark:text-gray-100 text-center transition-all"
-                      >
-                        <option value="1">1</option>
-                        <option value="N">N</option>
-                        <option value="M">M</option>
-                      </select>
+                    <div className="flex-1 h-px bg-gradient-to-l from-transparent via-gray-300 dark:via-white/15" />
+                  </div>
+
+                  {/* Entity 2 */}
+                  <div className="p-3 md:p-4">
+                    <label className="block text-xs font-bold uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-2">
+                      Entity 2
+                    </label>
+                    <div className="flex gap-2 items-center">
+                      <EntitySelect
+                          value={relEntity2}
+                          onChange={setRelEntity2}
+                          entities={nodes.filter(n => n.type === 'ENTITY')}
+                          accent="purple"
+                        />
+                      <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 flex-shrink-0 shadow-sm">
+                        {(['1', 'N', 'M'] as const).map(card => (
+                          <button
+                            key={card}
+                            type="button"
+                            onClick={() => setCardinality2(card)}
+                            className={`w-8 md:w-9 py-2 md:py-2.5 text-xs font-black transition-all ${
+                              cardinality2 === card
+                                ? 'bg-purple-500 dark:bg-purple-600 text-white shadow-inner'
+                                : 'bg-white/50 dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-500 dark:hover:text-purple-400'
+                            }`}
+                          >
+                            {card}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -4,17 +4,12 @@ import LZString from 'lz-string';
 import type { Node, Connection, AttributeInput, ViewState, PhysicsConfig } from './types';
 import Header from './components/Header';
 import { Sidebar } from './components/Sidebar';
-import { TutorialOverlay } from './components/TutorialOverlay';
 import { useHistory } from './hooks/useHistory';
 import { useShare } from './hooks/useShare';
-import { useTutorial } from './hooks/useTutorial';
 
 // --- Main Application ---
 
 export default function ERDiagramTool() {
-  // --- Tutorial State ---
-  const tutorial = useTutorial();
-  
   // --- Data State ---
   const [nodes, setNodes] = useState<Node[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -298,7 +293,7 @@ export default function ERDiagramTool() {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Prevent shortcuts when typing in input fields
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || (target as HTMLElement).isContentEditable) {
         // Allow Ctrl+A in input fields
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') return;
         return;
@@ -935,70 +930,53 @@ export default function ERDiagramTool() {
     setNewAttributes(updated); 
   };
 
-  // Restart Tutorial
-  const restartTutorial = () => {
-    tutorial.restartTutorial();
-  };
-
-  // Handle keyboard navigation for tutorial
-  useEffect(() => {
-    if (!tutorial.isActive) return;
-
-    const handleTutorialKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        tutorial.nextStep();
-      }
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        tutorial.previousStep();
-      }
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        tutorial.skipTutorial();
-      }
-    };
-
-    window.addEventListener('keydown', handleTutorialKeydown);
-    return () => window.removeEventListener('keydown', handleTutorialKeydown);
-  }, [tutorial]);
-
   const handleSaveEntity = () => {
     if (!newEntityLabel.trim()) return;
     saveHistory(); // Save state before changes
     if (editingEntityId) {
+        // Compute all changes from the current state snapshot BEFORE touching state,
+        // so the setNodes and setConnections updaters stay pure (no side-effects inside them).
+        // Calling setConnections inside a setNodes updater causes React 18 StrictMode to
+        // double-fire the side-effect, duplicating connections on every save.
+        const entityNode = nodes.find(n => n.id === editingEntityId);
+        const existingAttrIds = new Set(nodes.filter(n => n.parentId === editingEntityId).map(n => n.id));
+        const formAttrIds = new Set<string>();
+        const newAttrNodes: Node[] = [];
+        const newAttrConns: { id: string; sourceId: string; targetId: string }[] = [];
+
+        newAttributes.forEach((attr, idx) => {
+            if (!attr.label.trim()) return;
+            if (attr.id.startsWith('attr_temp') || !existingAttrIds.has(attr.id)) {
+                const newId = `a_${Date.now()}_${idx}`;
+                const angle = Math.random() * Math.PI * 2;
+                newAttrNodes.push({ id: newId, type: 'ATTRIBUTE', label: attr.label, x: (entityNode?.x ?? 0) + Math.cos(angle) * 80, y: (entityNode?.y ?? 0) + Math.sin(angle) * 80, parentId: editingEntityId, isPrimaryKey: attr.isPrimaryKey, isMultivalued: attr.isMultivalued, isDerived: attr.isDerived });
+                velocities.current[newId] = { vx: 0, vy: 0 };
+                newAttrConns.push({ id: `c_${Date.now()}_${idx}`, sourceId: editingEntityId, targetId: newId });
+                formAttrIds.add(newId);
+            } else {
+                formAttrIds.add(attr.id);
+            }
+        });
+
+        const toDeleteIds = Array.from(existingAttrIds).filter(id => !formAttrIds.has(id));
+
         setNodes(prev => {
-            const nextNodes = [...prev];
-            const entityIndex = nextNodes.findIndex(n => n.id === editingEntityId);
-            if (entityIndex >= 0) nextNodes[entityIndex] = { ...nextNodes[entityIndex], label: newEntityLabel, isWeak: isWeakEntity };
-
-            const existingAttrIds = new Set(prev.filter(n => n.parentId === editingEntityId).map(n => n.id));
-            const formAttrIds = new Set<string>();
-
-            newAttributes.forEach((attr, idx) => {
-                if (!attr.label.trim()) return;
-                
-                // Check if this is a new attribute (temp ID or ID not in existing attributes)
-                if (attr.id.startsWith('attr_temp') || !existingAttrIds.has(attr.id)) {
-                    const newId = `a_${Date.now()}_${idx}`;
-                    const parent = nextNodes.find(n => n.id === editingEntityId)!;
-                    const angle = Math.random() * Math.PI * 2;
-                    nextNodes.push({ id: newId, type: 'ATTRIBUTE', label: attr.label, x: parent.x + Math.cos(angle) * 80, y: parent.y + Math.sin(angle) * 80, parentId: editingEntityId, isPrimaryKey: attr.isPrimaryKey, isMultivalued: attr.isMultivalued, isDerived: attr.isDerived });
-                    velocities.current[newId] = { vx: 0, vy: 0 };
-                    setConnections(c => [...c, { id: `c_${Date.now()}_${idx}`, sourceId: editingEntityId, targetId: newId }]);
-                    formAttrIds.add(newId); // Add the new ID to track it
-                } else {
-                    // Update existing attribute
-                    formAttrIds.add(attr.id);
-                    const nodeIdx = nextNodes.findIndex(n => n.id === attr.id);
-                    if (nodeIdx >= 0) nextNodes[nodeIdx] = { ...nextNodes[nodeIdx], label: attr.label, isPrimaryKey: attr.isPrimaryKey, isMultivalued: attr.isMultivalued, isDerived: attr.isDerived };
+            const nextNodes = prev.map(n => {
+                if (n.id === editingEntityId) return { ...n, label: newEntityLabel, isWeak: isWeakEntity };
+                if (formAttrIds.has(n.id)) {
+                    const attrInput = newAttributes.find(a => a.id === n.id);
+                    if (attrInput) return { ...n, label: attrInput.label, isPrimaryKey: attrInput.isPrimaryKey, isMultivalued: attrInput.isMultivalued, isDerived: attrInput.isDerived };
                 }
-            });
+                return n;
+            }).filter(n => !toDeleteIds.includes(n.id));
+            return [...nextNodes, ...newAttrNodes];
+        });
 
-            const toDeleteIds = Array.from(existingAttrIds).filter(id => !formAttrIds.has(id));
-            const filteredNodes = nextNodes.filter(n => !toDeleteIds.includes(n.id));
-            if (toDeleteIds.length > 0) setConnections(c => c.filter(conn => !toDeleteIds.includes(conn.targetId) && !toDeleteIds.includes(conn.sourceId)));
-            return filteredNodes;
+        setConnections(prev => {
+            const filtered = toDeleteIds.length > 0
+                ? prev.filter(c => !toDeleteIds.includes(c.targetId) && !toDeleteIds.includes(c.sourceId))
+                : prev;
+            return [...filtered, ...newAttrConns];
         });
     } else {
         const centerX = -view.x/view.zoom + (containerRef.current?.clientWidth || 800)/(2*view.zoom);
@@ -1144,18 +1122,6 @@ export default function ERDiagramTool() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-black font-sans text-slate-800 dark:text-gray-100">
-      {/* Tutorial Overlay */}
-      <TutorialOverlay
-        isActive={tutorial.isActive}
-        currentStep={tutorial.getCurrentStep()}
-        stepNumber={tutorial.currentStep + 1}
-        totalSteps={tutorial.steps.length}
-        onNext={tutorial.nextStep}
-        onPrevious={tutorial.previousStep}
-        onSkip={tutorial.skipTutorial}
-        progress={tutorial.getProgress()}
-      />
-      
       {/* Header */}
       <Header
         isSidebarOpen={isSidebarOpen}
@@ -1187,8 +1153,6 @@ export default function ERDiagramTool() {
         setIsSettingsOpen={setIsSettingsOpen}
         physicsConfig={physicsConfig}
         setPhysicsConfig={setPhysicsConfig}
-        onRestartTutorial={restartTutorial}
-        onStartTutorial={tutorial.startTutorial}
         isDarkMode={isDarkMode}
         setIsDarkMode={setIsDarkMode}
         fileInputRef={fileInputRef}
@@ -1209,7 +1173,7 @@ export default function ERDiagramTool() {
         
         {/* Sidebar Overlay */}
         {isSidebarOpen && (
-          <div className="absolute inset-0 md:inset-auto md:top-0 md:left-0 md:w-auto md:h-auto pointer-events-none md:pointer-events-auto z-10">
+          <div className="absolute inset-0 md:inset-auto md:top-0 md:left-0 md:w-auto md:h-auto pointer-events-none md:pointer-events-auto z-10" onMouseDown={(e) => e.stopPropagation()}>
             <Sidebar
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -1267,16 +1231,11 @@ export default function ERDiagramTool() {
                  <p className="text-gray-400 text-base md:text-xl max-w-2xl mx-auto mb-10 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
                    Create beautiful Entity-Relationship diagrams with an intuitive drag-and-drop interface
                  </p>
-                 {tutorial.currentStep === null && (
-                   <div className="flex justify-center pointer-events-auto animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-                     <button
-                       onClick={tutorial.startTutorial}
-                       className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-full text-white font-medium transition-all duration-300 hover:scale-105 shadow-2xl shadow-purple-500/50"
-                     >
-                       Start Tutorial
-                     </button>
-                   </div>
-                 )}
+                 <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+                   <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base max-w-md mx-auto bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl px-6 py-4">
+                     Type an entity name in the sidebar and click <strong className="text-gray-300">Create Entity</strong> to get started. Add attributes, connect entities with relationships, then export your diagram.
+                   </p>
+                 </div>
                </div>
              </div>
            )}
