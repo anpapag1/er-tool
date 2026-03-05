@@ -67,9 +67,6 @@ The application will be available at `http://localhost:5174`
 - **Zoom**: Use mouse wheel, or two-finger pinch on mobile
 - **Minimap**: Click the minimap in the bottom-right corner to jump to a location
 
-### Tutorial
-First-time users will see an interactive tutorial. Skip it anytime with the Skip button or restart it from the menu.
-
 ## Tech Stack
 
 - **React 19** - UI framework
@@ -77,7 +74,7 @@ First-time users will see an interactive tutorial. Skip it anytime with the Skip
 - **Tailwind CSS** - Styling with dark mode support
 - **Vite** - Fast build tool and dev server
 - **SVG Canvas** - Vector-based diagram rendering
-- **localStorage** - Persistent tutorial state
+- **localStorage** - Persistent diagram state
 
 ## Building for Production
 
@@ -104,11 +101,9 @@ This will build the project and push it to the `gh-pages` branch.
 - **App.tsx** - Main application component with canvas and interaction logic
 - **Header.tsx** - Top navigation bar with controls
 - **Sidebar.tsx** - Entity/relationship editor panel
-- **TutorialOverlay.tsx** - Interactive tutorial with spotlight effect
 - **Button.tsx** - Reusable button component
 
 ### Hooks
-- **useTutorial.ts** - Tutorial state management
 - **useHistory.ts** - Undo/Redo functionality
 - **useShare.ts** - Diagram sharing and export
 
