@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Design files
+public/Untitled-1.ai
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
