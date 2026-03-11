@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Check, ZoomIn, ZoomOut, Maximize, Map } from 'lucide-react';
+import { Check, ZoomIn, ZoomOut, Maximize, Map, Plus, MoreHorizontal, Undo, Redo, Pencil } from 'lucide-react';
 import LZString from 'lz-string';
 import type { Node, Connection, AttributeInput, ViewState, PhysicsConfig } from './types';
 import Header from './components/Header';
@@ -18,7 +18,7 @@ export default function ERDiagramTool() {
   const { history, saveHistory, undo, redo } = useHistory(nodes, connections);
   
   // --- UI State ---
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,6 +27,7 @@ export default function ERDiagramTool() {
   const [showGrid, setShowGrid] = useState(true);
   const [showToast, setShowToast] = useState(false);
   const [showMinimap, setShowMinimap] = useState(true);
+  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
   const [isDraggingMinimap, setIsDraggingMinimap] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
@@ -77,6 +78,9 @@ export default function ERDiagramTool() {
   const [interactionMode, setInteractionMode] = useState<'IDLE' | 'PANNING' | 'BOX_SELECTING' | 'DRAGGING_NODES'>('IDLE');
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 }); // Screen coords for Panning, World coords for others
   const [selectionBox, setSelectionBox] = useState<{ x: number, y: number, w: number, h: number } | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const touchStartPointRef = useRef<{ x: number; y: number } | null>(null);
+  const isLongPressSelectingRef = useRef(false);
   
   // --- Physics State ---
   const [isPhysicsEnabled, setIsPhysicsEnabled] = useState(true);
@@ -169,6 +173,13 @@ export default function ERDiagramTool() {
     // Try to load from URL first, otherwise start empty
     loadFromURL();
   }, [loadFromURL]);
+
+  const clearLongPressTimer = useCallback(() => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
 
   // --- Physics Engine ---
 
@@ -536,14 +547,29 @@ export default function ERDiagramTool() {
 
   // --- Touch Event Handlers ---
   const handleTouchStart = (e: React.TouchEvent) => {
-    // Only handle single touch for panning
+    const LONG_PRESS_MS = 380;
+
+    // Only handle single touch for panning/box-select intent
     if (e.touches.length === 1) {
       const touch = e.touches[0];
       // Check if touch is on canvas (not on sidebar, header, etc.)
       const target = e.target as HTMLElement;
       if (target.tagName === 'svg' || target.tagName === 'g' || (target as HTMLElement).closest('svg')) {
-        setInteractionMode('PANNING');
-        setDragStart({ x: touch.clientX, y: touch.clientY });
+        touchStartPointRef.current = { x: touch.clientX, y: touch.clientY };
+        isLongPressSelectingRef.current = false;
+        clearLongPressTimer();
+
+        // Long-press arms BOX_SELECTING; moving before timeout falls back to panning.
+        longPressTimerRef.current = window.setTimeout(() => {
+          const startPoint = touchStartPointRef.current;
+          if (!startPoint) return;
+
+          const worldPos = toWorld(startPoint.x, startPoint.y);
+          isLongPressSelectingRef.current = true;
+          setInteractionMode('BOX_SELECTING');
+          setDragStart(worldPos);
+          setSelectionBox({ x: worldPos.x, y: worldPos.y, w: 0, h: 0 });
+        }, LONG_PRESS_MS);
       }
     }
     // Multi-touch for zoom (pinch) - handled in handleTouchMove
@@ -552,12 +578,47 @@ export default function ERDiagramTool() {
   const handleTouchMove = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       const touch = e.touches[0];
+
+      if (touchStartPointRef.current && !isLongPressSelectingRef.current) {
+        const dxFromStart = touch.clientX - touchStartPointRef.current.x;
+        const dyFromStart = touch.clientY - touchStartPointRef.current.y;
+        const movedDistance = Math.sqrt(dxFromStart * dxFromStart + dyFromStart * dyFromStart);
+
+        // If finger moves before long-press trigger, cancel long-press and pan normally.
+        if (movedDistance > 10) {
+          clearLongPressTimer();
+          if (interactionMode !== 'PANNING') {
+            setInteractionMode('PANNING');
+            setDragStart({ x: touch.clientX, y: touch.clientY });
+          }
+        }
+
+        // Keep waiting for long-press while finger is mostly still.
+        if (movedDistance <= 10 && interactionMode !== 'PANNING') {
+          return;
+        }
+      }
       
       if (interactionMode === 'PANNING') {
         const dx = touch.clientX - dragStart.x;
         const dy = touch.clientY - dragStart.y;
         setView(v => ({ ...v, x: v.x + dx, y: v.y + dy }));
         setDragStart({ x: touch.clientX, y: touch.clientY });
+      } else if (interactionMode === 'BOX_SELECTING') {
+        const worldPos = toWorld(touch.clientX, touch.clientY);
+        const x = Math.min(worldPos.x, dragStart.x);
+        const y = Math.min(worldPos.y, dragStart.y);
+        const w = Math.abs(worldPos.x - dragStart.x);
+        const h = Math.abs(worldPos.y - dragStart.y);
+
+        setSelectionBox({ x, y, w, h });
+
+        const selected = nodes.filter(n =>
+          n.x >= x && n.x <= x + w &&
+          n.y >= y && n.y <= y + h
+        ).map(n => n.id);
+
+        setSelectedNodeIds(selected);
       } else if (interactionMode === 'DRAGGING_NODES') {
         // Handle node dragging with touch
         const worldPos = toWorld(touch.clientX, touch.clientY);
@@ -615,10 +676,21 @@ export default function ERDiagramTool() {
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    clearLongPressTimer();
+    touchStartPointRef.current = null;
+    isLongPressSelectingRef.current = false;
     (window as any).lastTouchDistance = null;
     if (e.touches.length === 0) {
       handleMouseUp();
     }
+  };
+
+  const handleTouchCancel = () => {
+    clearLongPressTimer();
+    touchStartPointRef.current = null;
+    isLongPressSelectingRef.current = false;
+    (window as any).lastTouchDistance = null;
+    handleMouseUp();
   };
   
   // --- Form Logic ---
@@ -1121,7 +1193,7 @@ export default function ERDiagramTool() {
 
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-black font-sans text-slate-800 dark:text-gray-100">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-black font-sans text-slate-800 dark:text-zinc-100">
       {/* Header */}
       <Header
         isSidebarOpen={isSidebarOpen}
@@ -1164,6 +1236,7 @@ export default function ERDiagramTool() {
         <div ref={containerRef} className="w-full h-full bg-gray-50 dark:bg-black overflow-hidden cursor-crosshair touch-none"
              onMouseUp={handleMouseUp}
              onTouchEnd={handleTouchEnd}
+             onTouchCancel={handleTouchCancel}
              onMouseMove={handleMouseMove}
              onTouchMove={handleTouchMove}
              onMouseDown={handleMouseDownBg}
@@ -1173,8 +1246,15 @@ export default function ERDiagramTool() {
         
         {/* Sidebar Overlay */}
         {isSidebarOpen && (
-          <div className="absolute inset-0 md:inset-auto md:top-0 md:left-0 md:w-auto md:h-auto pointer-events-none md:pointer-events-auto z-10" onMouseDown={(e) => e.stopPropagation()}>
+          <>
+          {/* Mobile backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 z-10 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+          <div className="absolute inset-0 md:inset-auto md:top-0 md:left-0 md:w-auto md:h-auto pointer-events-none md:pointer-events-auto z-20" onMouseDown={(e) => e.stopPropagation()}>
             <Sidebar
+            onClose={() => setIsSidebarOpen(false)}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             selectedNodeIds={selectedNodeIds}
@@ -1205,11 +1285,12 @@ export default function ERDiagramTool() {
             setSelectedNodeIds={setSelectedNodeIds}
             />
           </div>
+          </>
         )}
            {/* Hero Section - Show when no nodes exist */}
            {nodes.length === 0 && (
              <div className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-all`} style={{
-               left: isSidebarOpen ? '24rem' : '0',
+               left: isSidebarOpen && window.innerWidth >= 768 ? '24rem' : '0',
                right: '0'
              }}>
                {/* Gradient Orbs Background */}
@@ -1218,10 +1299,10 @@ export default function ERDiagramTool() {
                
                <div className="text-center px-4 relative z-10">
                  <div className="mb-8 animate-fade-in-up">
-                   <h1 className="text-5xl md:text-8xl font-bold text-black dark:text-white/90 mb-2 tracking-tight">
+                   <h1 className="text-3xl md:text-8xl font-bold text-black dark:text-white/90 mb-2 tracking-tight">
                      ER Diagram
                    </h1>
-                   <h2 className="text-6xl md:text-9xl font-black bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 bg-clip-text text-transparent text-glow" style={{
+                   <h2 className="text-4xl md:text-9xl font-black bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 bg-clip-text text-transparent text-glow" style={{
                      backgroundSize: '200% 100%',
                      animation: 'gradient 8s ease infinite'
                    }}>
@@ -1232,7 +1313,7 @@ export default function ERDiagramTool() {
                    Create beautiful Entity-Relationship diagrams with an intuitive drag-and-drop interface
                  </p>
                  <div className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-                   <p className="text-gray-500 dark:text-gray-400 text-sm md:text-base max-w-md mx-auto bg-white/5 dark:bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl px-6 py-4">
+                   <p className="text-gray-500 dark:text-zinc-400 text-sm md:text-base max-w-md mx-auto bg-white/10 dark:bg-zinc-800/80 border border-gray-200/20 dark:border-zinc-800 rounded-2xl px-6 py-4">
                      Type an entity name in the sidebar and click <strong className="text-gray-300">Create Entity</strong> to get started. Add attributes, connect entities with relationships, then export your diagram.
                    </p>
                  </div>
@@ -1251,12 +1332,101 @@ export default function ERDiagramTool() {
            </div>
            )}
 
-           {/* Toolbar */}
-           <div className={`absolute bottom-4 md:bottom-6 left-4 flex bg-white/10 dark:bg-white/5 backdrop-blur-3xl rounded-2xl shadow-2xl border border-gray-200/20 dark:border-white/10 p-1 gap-1 z-20 flex-wrap w-auto transition-all ${isSidebarOpen ? 'md:left-[calc(24rem+2rem)]' : 'md:left-6'}`} data-tutorial="zoom-controls">
-               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom * 1.2 }))} className="p-2 hover:bg-gray-100/50 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-gray-200 transition-all" title="Zoom In (Ctrl +)"><ZoomIn size={18} className="md:w-5 md:h-5"/></button>
-               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom / 1.2 }))} className="p-2 hover:bg-gray-100/50 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-gray-200 transition-all" title="Zoom Out (Ctrl -)"><ZoomOut size={18} className="md:w-5 md:h-5"/></button>
-               <button onClick={handleZoomToFit} className="p-2 hover:bg-gray-100/50 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-gray-200 transition-all" title="Zoom to Fit"><Maximize size={18} className="md:w-5 md:h-5"/></button>
-               <button onClick={() => setShowMinimap(!showMinimap)} className={`p-2 rounded-xl text-gray-700 dark:text-gray-200 transition-all ${showMinimap ? 'bg-blue-500/20 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300' : 'hover:bg-gray-100/50 dark:hover:bg-white/10'}`} title="Toggle Minimap"><Map size={18} className="md:w-5 md:h-5"/></button>
+           {/* Desktop Toolbar */}
+           <div className={`hidden md:flex absolute bottom-6 left-4 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 p-1 gap-1 z-20 flex-wrap w-auto transition-all ${isSidebarOpen ? 'md:left-[calc(24rem+2rem)]' : 'md:left-6'}`} data-tutorial="zoom-controls">
+               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom * 1.2 }))} className="p-2 hover:bg-gray-100/50 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-zinc-200 transition-all" title="Zoom In (Ctrl +)"><ZoomIn size={18} className="md:w-5 md:h-5"/></button>
+               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom / 1.2 }))} className="p-2 hover:bg-gray-100/50 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-zinc-200 transition-all" title="Zoom Out (Ctrl -)"><ZoomOut size={18} className="md:w-5 md:h-5"/></button>
+               <button onClick={handleZoomToFit} className="p-2 hover:bg-gray-100/50 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-zinc-200 transition-all" title="Zoom to Fit"><Maximize size={18} className="md:w-5 md:h-5"/></button>
+               <button onClick={() => setShowMinimap(!showMinimap)} className={`p-2 rounded-xl text-gray-700 dark:text-zinc-200 transition-all ${showMinimap ? 'bg-blue-500/20 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300' : 'hover:bg-gray-100/50 dark:hover:bg-white/10'}`} title="Toggle Minimap"><Map size={18} className="md:w-5 md:h-5"/></button>
+           </div>
+
+           {/* Mobile Bottom Action Bar */}
+           <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 p-1.5 gap-1 z-30 flex items-center">
+               {selectedNodeIds.length > 0 ? (
+                 <button
+                   onClick={() => {
+                     const selectedNode = selectedNodeIds.length === 1 ? nodes.find(n => n.id === selectedNodeIds[0]) : null;
+
+                     if (selectedNodeIds.length === 1 && selectedNode) {
+                       if (selectedNode.type === 'RELATIONSHIP') {
+                         setActiveTab('RELATIONSHIP');
+                       } else {
+                         // ENTITY and ATTRIBUTE are edited through the Entity tab.
+                         setActiveTab('ENTITY');
+                       }
+                     }
+
+                     // Multi-select follows desktop behavior via sidebar multi-selection panel.
+                     setIsSidebarOpen(true);
+                   }}
+                   className="h-11 w-11 flex items-center justify-center rounded-xl bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+                   title={selectedNodeIds.length > 1 ? 'Review Selection' : 'Edit Selection'}
+                 >
+                   <Pencil size={18} />
+                 </button>
+               ) : (!isSidebarOpen && (
+                 <button
+                   onClick={() => {
+                     setActiveTab('ENTITY');
+                     setIsSidebarOpen(true);
+                   }}
+                   className="h-11 w-11 flex items-center justify-center rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                   title="Add Entity"
+                 >
+                   <Plus size={19} />
+                 </button>
+               ))}
+               <button
+                 onClick={() => undo(setNodes, setConnections, setSelectedNodeIds)}
+                 disabled={history.past.length === 0}
+                 className="h-11 w-11 flex items-center justify-center hover:bg-gray-100/70 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                 title="Undo"
+               >
+                 <Undo size={17} />
+               </button>
+               <button
+                 onClick={() => redo(setNodes, setConnections, setSelectedNodeIds)}
+                 disabled={history.future.length === 0}
+                 className="h-11 w-11 flex items-center justify-center hover:bg-gray-100/70 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-zinc-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                 title="Redo"
+               >
+                 <Redo size={17} />
+               </button>
+               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom * 1.2 }))} className="h-11 w-11 flex items-center justify-center hover:bg-gray-100/70 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-zinc-200 transition-all" title="Zoom In"><ZoomIn size={18} /></button>
+               <button onClick={() => setView(v => ({ ...v, zoom: v.zoom / 1.2 }))} className="h-11 w-11 flex items-center justify-center hover:bg-gray-100/70 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-zinc-200 transition-all" title="Zoom Out"><ZoomOut size={18} /></button>
+               <button onClick={handleZoomToFit} className="h-11 w-11 flex items-center justify-center hover:bg-gray-100/70 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-zinc-200 transition-all" title="Fit"><Maximize size={18} /></button>
+               <div className="relative">
+                 <button
+                   onClick={() => setIsMobileMoreOpen(v => !v)}
+                   className={`h-11 w-11 flex items-center justify-center rounded-xl transition-all ${isMobileMoreOpen ? 'bg-blue-500/20 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300' : 'hover:bg-gray-100/70 dark:hover:bg-white/10 text-gray-700 dark:text-zinc-200'}`}
+                   title="More"
+                 >
+                   <MoreHorizontal size={18} />
+                 </button>
+                 {isMobileMoreOpen && (
+                   <div className="absolute bottom-14 right-0 w-44 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-2xl overflow-hidden">
+                     <button
+                       onClick={() => {
+                         setShowMinimap(v => !v);
+                         setIsMobileMoreOpen(false);
+                       }}
+                       className="w-full px-3 py-3 text-left text-sm text-gray-700 dark:text-zinc-200 hover:bg-gray-100/70 dark:hover:bg-white/10"
+                     >
+                       {showMinimap ? 'Hide Minimap' : 'Show Minimap'}
+                     </button>
+                     <button
+                       onClick={() => {
+                         setActiveTab('RELATIONSHIP');
+                         setIsSidebarOpen(true);
+                         setIsMobileMoreOpen(false);
+                       }}
+                       className="w-full px-3 py-3 text-left text-sm text-gray-700 dark:text-zinc-200 hover:bg-gray-100/70 dark:hover:bg-white/10 border-t border-gray-200 dark:border-zinc-800"
+                     >
+                       Add Relationship
+                     </button>
+                   </div>
+                 )}
+               </div>
            </div>
            
            <svg 
@@ -1399,14 +1569,14 @@ export default function ERDiagramTool() {
              </g>
            </svg>
            
-           <div className="absolute top-4 right-4 bg-white/5 dark:bg-white/[0.02] backdrop-blur-3xl p-4 rounded-2xl text-xs text-gray-600 dark:text-gray-400 border border-gray-200/20 dark:border-white/10 pointer-events-none space-y-1 z-10 max-w-xs shadow-lg">
-              <p className="font-bold text-gray-700 dark:text-gray-200 mb-2">Keyboard Shortcuts</p>
+           <div className="absolute top-4 right-4 bg-white dark:bg-zinc-900 p-4 rounded-2xl text-xs text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-800 pointer-events-none space-y-1 z-10 max-w-xs shadow-lg hidden sm:block">
+              <p className="font-bold text-gray-700 dark:text-zinc-200 mb-2">Keyboard Shortcuts</p>
               <p><strong>Ctrl+Z:</strong> Undo</p>
               <p><strong>Ctrl+Y:</strong> Redo</p>
               <p><strong>Ctrl+F:</strong> Search</p>
               <p><strong>Ctrl+A:</strong> Select All</p>
               <p><strong>Delete:</strong> Delete Selected</p>
-              <p className="font-bold text-gray-700 dark:text-gray-200 mt-2 mb-1">Mouse Controls</p>
+              <p className="font-bold text-gray-700 dark:text-zinc-200 mt-2 mb-1">Mouse Controls</p>
               <p><strong>Space+Drag:</strong> Pan</p>
               <p><strong>Wheel:</strong> Zoom</p>
               <p><strong>Drag Box:</strong> Multi-Select</p>
@@ -1428,8 +1598,9 @@ export default function ERDiagramTool() {
         const contentHeight = (maxY - minY) + padding * 2;
         
         // Minimap dimensions
-        const minimapWidth = 180;
-        const minimapHeight = 120;
+        const isMobileViewport = window.innerWidth < 768;
+        const minimapWidth = isMobileViewport ? 148 : 180;
+        const minimapHeight = isMobileViewport ? 98 : 120;
         
         // Calculate scale to fit content in minimap
         const scaleX = minimapWidth / contentWidth;
@@ -1488,11 +1659,11 @@ export default function ERDiagramTool() {
         };
         
         return (
-          <div className="fixed bottom-20 md:bottom-22 right-4 md:right-6 z-20">
+          <div className="fixed top-16 right-3 md:top-auto md:bottom-22 md:right-6 z-[15]">
             <svg 
               width={minimapWidth} 
               height={minimapHeight}
-              className="border border-gray-200/20 dark:border-white/10 rounded-2xl shadow-2xl bg-white/10 dark:bg-white/5 backdrop-blur-3xl cursor-pointer"
+              className="border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-2xl bg-white dark:bg-zinc-900 cursor-pointer"
               onClick={handleMinimapClick}
               onMouseMove={handleViewportMouseMove}
               onMouseUp={handleViewportMouseUp}
@@ -1583,23 +1754,23 @@ export default function ERDiagramTool() {
       })()}
       
       {/* Credits - Always visible */}
-      <div className="fixed bottom-4 md:bottom-5 right-4 md:right-6 z-15">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 dark:bg-gray-900/50 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 shadow-lg hover:shadow-xl transition-all duration-200">
-          <span className="text-xs text-gray-600 dark:text-gray-400">By</span>
+      <div className="fixed bottom-24 md:bottom-5 right-4 md:right-6 z-20 md:z-15">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-lg hover:shadow-xl transition-all duration-200">
+          <span className="text-xs text-gray-600 dark:text-zinc-400">By</span>
           <a 
             href="https://github.com/anpapag1" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="text-xs font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            className="text-xs font-medium text-gray-800 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
             @anpapag1
           </a>
-          <span className="text-gray-300 dark:text-gray-600">•</span>
+          <span className="text-gray-300 dark:text-zinc-400">•</span>
           <a 
             href="https://github.com/anpapag1/er-tool" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs font-medium text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            className="flex items-center gap-1 text-xs font-medium text-gray-800 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
@@ -1611,7 +1782,7 @@ export default function ERDiagramTool() {
       
       {/* Toast Notification */}
       {showToast && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900/90 dark:bg-gray-900/80 backdrop-blur-xl text-white px-6 py-3 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-2 z-50 animate-fade-in">
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-2xl shadow-2xl border border-gray-700 flex items-center gap-2 z-50 animate-fade-in">
           <Check size={20} className="text-green-400" />
           <span className="font-medium">Share link copied to clipboard!</span>
         </div>

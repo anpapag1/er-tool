@@ -92,18 +92,18 @@ export default function Header({
   const fileInputRef = externalFileInputRef || internalFileInputRef;
 
   return (
-    <header className="bg-white/80 dark:bg-black border-b border-gray-200/50 dark:border-white/10 px-2 md:px-4 py-2 md:py-3 flex items-center justify-between shadow-2xl z-30 relative">
+    <header className="bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 px-2 md:px-4 py-2 md:py-3 flex items-center justify-between shadow-2xl z-30 relative">
       {/* Left Section */}
       <div className="flex items-center gap-2 md:gap-3 min-w-0">
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
-          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-300 transition-colors flex-shrink-0"
+          className="hidden md:flex p-2.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-lg text-gray-600 dark:text-zinc-300 transition-colors flex-shrink-0"
           title={isSidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
         >
           {isSidebarOpen ? <PanelLeftClose size={18} className="md:w-5 md:h-5" /> : <PanelLeftOpen size={18} className="md:w-5 md:h-5" />}
         </button>
 
-        <div className="flex items-center gap-1 md:gap-2 pl-2 border-l border-gray-200/50 dark:border-white/10 min-w-0">
+        <div className="flex items-center gap-1 md:gap-2 md:pl-2 md:border-l border-gray-200/50 dark:border-white/10 min-w-0">
           <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="logo" className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0 rounded-md" />
           <h1 className="text-sm md:text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 bg-clip-text text-transparent truncate" style={{
             backgroundSize: '200% 100%'
@@ -131,7 +131,7 @@ export default function Header({
           />
 
           {/* Divider */}
-          <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 mx-0.5"></div>
+          <div className="h-6 w-px bg-gray-300 dark:bg-zinc-600 mx-0.5"></div>
         </div>
 
         {/* Physics Button - Icon only on mobile */}
@@ -140,7 +140,7 @@ export default function Header({
           className={`flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all flex-shrink-0 ${
             isPhysicsEnabled 
               ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800' 
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
           }`}
           title={isPhysicsEnabled ? "Disable Physics" : "Enable Physics"}
           data-tutorial="physics-toggle"
@@ -156,7 +156,7 @@ export default function Header({
             className={`flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${
               isGridSnapping 
                 ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800' 
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
             }`}
             title="Grid Options"
           >
@@ -166,7 +166,7 @@ export default function Header({
           </button>
           
           {isGridMenuOpen && (
-            <div className="absolute top-full left-0 mt-1 bg-white/90 dark:bg-gray-900/80 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 w-40 md:w-48 z-50 text-xs md:text-sm">
+            <div className="absolute top-full left-0 mt-1 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 w-40 md:w-48 z-50 text-xs md:text-sm">
               <div className="p-2 border-b border-gray-200/50 dark:border-white/10">
                 <label className="flex items-center justify-between px-2 py-1.5 hover:bg-gray-100/50 dark:hover:bg-white/5 rounded-xl cursor-pointer transition-all">
                   <span className="text-xs">Enable Snapping</span>
@@ -188,7 +188,7 @@ export default function Header({
                 </label>
               </div>
               <div className="p-2">
-                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-2 py-1">Size</div>
+                <div className="text-xs font-semibold text-gray-500 dark:text-zinc-400 px-2 py-1">Size</div>
                 {[10, 20, 40].map((size) => (
                   <button 
                     key={size}
@@ -208,28 +208,28 @@ export default function Header({
         </div>
 
         {/* Divider - Hidden on mobile */}
-        <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 mx-0.5 hidden sm:block"></div>
+        <div className="h-6 w-px bg-gray-300 dark:bg-zinc-600 mx-0.5 hidden sm:block"></div>
 
         {/* Search - Compact on mobile */}
         {isSearchOpen && (
-          <div className="flex items-center gap-1 md:gap-2 bg-white/70 dark:bg-gray-900/50 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-xl px-1 md:px-2 py-1 shadow-lg">
-            <Search size={14} className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
+          <div className="flex items-center gap-1 md:gap-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-1 md:px-2 py-1 shadow-lg">
+            <Search size={14} className="text-gray-400 dark:text-zinc-500 flex-shrink-0" />
             <input 
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search..."
-              className="w-24 md:w-40 px-1 py-1 text-xs md:text-sm outline-none bg-transparent dark:text-gray-100"
+              className="w-24 md:w-40 px-1 py-1 text-xs md:text-sm outline-none bg-transparent dark:text-zinc-100"
               autoFocus
             />
             {searchQuery.trim() && (
-              <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+              <span className="text-xs text-gray-500 dark:text-zinc-400 whitespace-nowrap">
                 {nodes.filter(n => n.label.toLowerCase().includes(searchQuery.toLowerCase().trim())).length}/{nodes.length}
               </span>
             )}
             <button 
               onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} 
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex-shrink-0"
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors flex-shrink-0 flex items-center justify-center"
             >
               <X size={14} />
             </button>
@@ -239,7 +239,7 @@ export default function Header({
           variant="ghost" 
           onClick={() => setIsSearchOpen(!isSearchOpen)} 
           icon={Search}
-          className={isSearchOpen ? 'bg-gray-200 dark:bg-gray-700' : ''}
+          className={isSearchOpen ? 'bg-gray-200 dark:bg-zinc-700' : ''}
           title="Search (Ctrl+F)"
         />
 
@@ -267,7 +267,7 @@ export default function Header({
           variant="ghost" 
           onClick={() => setIsSettingsOpen(!isSettingsOpen)} 
           icon={Settings}
-          className={isSettingsOpen ? 'bg-gray-200 dark:bg-gray-700' : ''}
+          className={isSettingsOpen ? 'bg-gray-200 dark:bg-zinc-700' : ''}
           title="Physics Settings" 
         />
 
@@ -275,7 +275,7 @@ export default function Header({
         <div className="relative flex-shrink-0" data-tutorial="export-button">
           <button 
             onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-            className="flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg font-medium transition-all bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs md:text-sm"
+            className="flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg font-medium transition-all bg-gray-100 dark:bg-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-600 text-gray-600 dark:text-zinc-300 text-xs md:text-sm"
             title="Export Options"
           >
             <FileDown size={16} />
@@ -284,7 +284,7 @@ export default function Header({
           </button>
           
           {isExportMenuOpen && (
-            <div className="absolute top-full right-0 mt-1 bg-white/90 dark:bg-gray-900/80 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 w-32 md:w-40 z-50 text-xs md:text-sm overflow-hidden">
+            <div className="absolute top-full right-0 mt-1 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 w-32 md:w-40 z-50 text-xs md:text-sm overflow-hidden">
               <button 
                 onClick={() => { onExportJson(); setIsExportMenuOpen(false); }} 
                 className="w-full text-left px-3 md:px-4 py-1.5 md:py-2 hover:bg-gray-100/50 dark:hover:bg-white/5 transition-all"
@@ -339,12 +339,12 @@ export default function Header({
 
       {/* Physics Settings Panel - Mobile responsive */}
       {isSettingsOpen && (
-        <div className="absolute top-full right-2 md:right-4 mt-2 bg-white/90 dark:bg-gray-900/80 backdrop-blur-2xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-white/10 p-3 md:p-4 w-[calc(100vw-1rem)] md:w-72 z-50 max-h-[80vh] overflow-y-auto">
+        <div className="absolute top-full right-2 md:right-4 mt-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 p-3 md:p-4 w-[calc(100vw-1rem)] md:w-72 z-50 max-h-[80vh] overflow-y-auto">
           <div className="flex justify-between items-center mb-2 md:mb-3">
-            <h3 className="font-bold text-gray-700 dark:text-gray-200 text-xs md:text-sm">Physics Settings</h3>
+            <h3 className="font-bold text-gray-700 dark:text-zinc-200 text-xs md:text-sm">Physics Settings</h3>
             <button 
               onClick={() => setIsSettingsOpen(false)}
-              className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0"
+              className="text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 flex-shrink-0"
             >
               <X size={16} />
             </button>
@@ -353,53 +353,53 @@ export default function Header({
           <div className="space-y-3 md:space-y-4">
             <div>
               <div className="flex justify-between mb-1">
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-300">Repulsion</label>
-                <span className="text-xs text-gray-400 dark:text-gray-500">{physicsConfig.repulsion}</span>
+                <label className="text-xs font-medium text-gray-600 dark:text-zinc-300">Repulsion</label>
+                <span className="text-xs text-gray-400 dark:text-zinc-500">{physicsConfig.repulsion}</span>
               </div>
               <input 
                 type="range" min="1000" max="50000" step="1000" 
                 value={physicsConfig.repulsion}
                 onChange={(e) => setPhysicsConfig({...physicsConfig, repulsion: parseInt(e.target.value)})}
-                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                className="w-full h-2 bg-gray-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
             </div>
 
             <div>
               <div className="flex justify-between mb-1">
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-300">Target Distance</label>
-                <span className="text-xs text-gray-400 dark:text-gray-500">{physicsConfig.springLength}px</span>
+                <label className="text-xs font-medium text-gray-600 dark:text-zinc-300">Target Distance</label>
+                <span className="text-xs text-gray-400 dark:text-zinc-500">{physicsConfig.springLength}px</span>
               </div>
               <input 
                 type="range" min="30" max="200" step="5" 
                 value={physicsConfig.springLength}
                 onChange={(e) => setPhysicsConfig({...physicsConfig, springLength: parseInt(e.target.value)})}
-                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                className="w-full h-2 bg-gray-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
             </div>
 
             <div>
               <div className="flex justify-between mb-1">
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-300">Stiffness</label>
-                <span className="text-xs text-gray-400 dark:text-gray-500">{physicsConfig.springStiffness.toFixed(2)}</span>
+                <label className="text-xs font-medium text-gray-600 dark:text-zinc-300">Stiffness</label>
+                <span className="text-xs text-gray-400 dark:text-zinc-500">{physicsConfig.springStiffness.toFixed(2)}</span>
               </div>
               <input 
                 type="range" min="0.01" max="0.2" step="0.01" 
                 value={physicsConfig.springStiffness}
                 onChange={(e) => setPhysicsConfig({...physicsConfig, springStiffness: parseFloat(e.target.value)})}
-                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                className="w-full h-2 bg-gray-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
             </div>
 
             <div>
               <div className="flex justify-between mb-1">
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-300">Friction</label>
-                <span className="text-xs text-gray-400 dark:text-gray-500">{physicsConfig.damping.toFixed(2)}</span>
+                <label className="text-xs font-medium text-gray-600 dark:text-zinc-300">Friction</label>
+                <span className="text-xs text-gray-400 dark:text-zinc-500">{physicsConfig.damping.toFixed(2)}</span>
               </div>
               <input 
                 type="range" min="0.1" max="0.99" step="0.01" 
                 value={physicsConfig.damping}
                 onChange={(e) => setPhysicsConfig({...physicsConfig, damping: parseFloat(e.target.value)})}
-                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                className="w-full h-2 bg-gray-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
             </div>
 
