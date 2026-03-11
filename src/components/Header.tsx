@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Pause, Play, Grid, ChevronDown, Search, Copy, Settings, FileDown, Upload, PanelLeftClose, PanelLeftOpen, Undo, Redo, X, Moon, Sun, SlidersHorizontal } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Pause, Play, Grid, ChevronDown, Search, Copy, Settings, FileDown, Upload, PanelLeftClose, PanelLeftOpen, Undo, Redo, X, Moon, Sun, Atom } from 'lucide-react';
 import { Button } from './Button';
 import type { Node, PhysicsConfig } from '../types';
 
@@ -89,12 +89,35 @@ export default function Header({
   const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isPhysicsMenuOpen, setIsPhysicsMenuOpen] = useState(false);
-  const internalFileInputRef = React.useRef<HTMLInputElement>(null);
+  const internalFileInputRef = useRef<HTMLInputElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const fileInputRef = externalFileInputRef || internalFileInputRef;
+
+  useEffect(() => {
+    const handleOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target;
+      if (!(target instanceof globalThis.Node)) return;
+      if (headerRef.current && !headerRef.current.contains(target)) {
+        setIsGridMenuOpen(false);
+        setIsExportMenuOpen(false);
+        setIsPhysicsMenuOpen(false);
+        setIsSettingsOpen(false);
+        setIsSearchOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+    };
+  }, [setIsSearchOpen, setIsSettingsOpen]);
 
   if (isSearchOpen) {
     return (
-      <header className="bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 px-2.5 md:px-4 py-2 md:py-3 shadow-2xl z-30 relative">
+      <header ref={headerRef} className="bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 px-2.5 md:px-4 py-2 md:py-3 shadow-2xl z-30 relative">
         <div className="w-full flex items-center gap-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-2 md:px-3 py-1.5 md:py-2 min-h-[2.5rem]">
           <Search size={16} className="text-gray-400 dark:text-zinc-500 flex-shrink-0" />
           <input
@@ -123,7 +146,7 @@ export default function Header({
   }
 
   return (
-    <header className="bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 px-2.5 md:px-4 py-2 md:py-3 flex items-center justify-between shadow-2xl z-30 relative">
+    <header ref={headerRef} className="bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 px-2.5 md:px-4 py-2 md:py-3 flex items-center justify-between shadow-2xl z-30 relative">
       {/* Left Section */}
       <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
         <button 
@@ -187,14 +210,15 @@ export default function Header({
             className={`h-9 w-9 flex items-center justify-center rounded-xl transition-all ${isPhysicsMenuOpen ? 'bg-blue-500/20 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300' : 'hover:bg-gray-100/70 dark:hover:bg-white/10 text-gray-700 dark:text-zinc-200'}`}
             title="Physics"
           >
-            <SlidersHorizontal size={16} />
+            <Atom size={16} />
           </button>
 
           {isPhysicsMenuOpen && (
-            <div className="absolute top-full right-0 mt-1 w-44 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 z-50 overflow-hidden text-sm">
+            <div className="fixed top-[calc(env(safe-area-inset-top)+4rem)] left-3 right-3 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 z-[60] overflow-hidden text-sm">
               <button
                 onClick={() => {
                   setIsPhysicsEnabled(!isPhysicsEnabled);
+                  setIsPhysicsMenuOpen(false);
                 }}
                 className="w-full px-3 py-2.5 text-left hover:bg-gray-100/60 dark:hover:bg-white/10 transition-all flex items-center justify-between"
               >
