@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Check, ZoomIn, ZoomOut, Maximize, Map, Plus, MoreHorizontal, Undo, Redo, Pencil } from 'lucide-react';
+import { Check, ZoomIn, ZoomOut, Maximize, Map, Plus, Undo, Redo, Pencil } from 'lucide-react';
 import LZString from 'lz-string';
 import type { Node, Connection, AttributeInput, ViewState, PhysicsConfig } from './types';
 import Header from './components/Header';
@@ -27,7 +27,6 @@ export default function ERDiagramTool() {
   const [showGrid, setShowGrid] = useState(true);
   const [showToast, setShowToast] = useState(false);
   const [showMinimap, setShowMinimap] = useState(true);
-  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
   const [isDraggingMinimap, setIsDraggingMinimap] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
@@ -1341,7 +1340,13 @@ export default function ERDiagramTool() {
            </div>
 
            {/* Mobile Bottom Action Bar */}
-           <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 p-1.5 gap-1 z-30 flex items-center">
+           <div
+             className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 p-1.5 gap-1 z-30 flex items-center"
+             onMouseDown={(e) => e.stopPropagation()}
+             onClick={(e) => e.stopPropagation()}
+             onTouchStart={(e) => e.stopPropagation()}
+             onTouchMove={(e) => e.stopPropagation()}
+           >
                {selectedNodeIds.length > 0 ? (
                  <button
                    onClick={() => {
@@ -1395,38 +1400,13 @@ export default function ERDiagramTool() {
                <button onClick={() => setView(v => ({ ...v, zoom: v.zoom * 1.2 }))} className="h-11 w-11 flex items-center justify-center hover:bg-gray-100/70 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-zinc-200 transition-all" title="Zoom In"><ZoomIn size={18} /></button>
                <button onClick={() => setView(v => ({ ...v, zoom: v.zoom / 1.2 }))} className="h-11 w-11 flex items-center justify-center hover:bg-gray-100/70 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-zinc-200 transition-all" title="Zoom Out"><ZoomOut size={18} /></button>
                <button onClick={handleZoomToFit} className="h-11 w-11 flex items-center justify-center hover:bg-gray-100/70 dark:hover:bg-white/10 rounded-xl text-gray-700 dark:text-zinc-200 transition-all" title="Fit"><Maximize size={18} /></button>
-               <div className="relative">
-                 <button
-                   onClick={() => setIsMobileMoreOpen(v => !v)}
-                   className={`h-11 w-11 flex items-center justify-center rounded-xl transition-all ${isMobileMoreOpen ? 'bg-blue-500/20 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300' : 'hover:bg-gray-100/70 dark:hover:bg-white/10 text-gray-700 dark:text-zinc-200'}`}
-                   title="More"
-                 >
-                   <MoreHorizontal size={18} />
-                 </button>
-                 {isMobileMoreOpen && (
-                   <div className="absolute bottom-14 right-0 w-44 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-2xl overflow-hidden">
-                     <button
-                       onClick={() => {
-                         setShowMinimap(v => !v);
-                         setIsMobileMoreOpen(false);
-                       }}
-                       className="w-full px-3 py-3 text-left text-sm text-gray-700 dark:text-zinc-200 hover:bg-gray-100/70 dark:hover:bg-white/10"
-                     >
-                       {showMinimap ? 'Hide Minimap' : 'Show Minimap'}
-                     </button>
-                     <button
-                       onClick={() => {
-                         setActiveTab('RELATIONSHIP');
-                         setIsSidebarOpen(true);
-                         setIsMobileMoreOpen(false);
-                       }}
-                       className="w-full px-3 py-3 text-left text-sm text-gray-700 dark:text-zinc-200 hover:bg-gray-100/70 dark:hover:bg-white/10 border-t border-gray-200 dark:border-zinc-800"
-                     >
-                       Add Relationship
-                     </button>
-                   </div>
-                 )}
-               </div>
+               <button
+                 onClick={() => setShowMinimap(v => !v)}
+                 className={`h-11 w-11 flex items-center justify-center rounded-xl transition-all ${showMinimap ? 'bg-blue-500/20 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300' : 'hover:bg-gray-100/70 dark:hover:bg-white/10 text-gray-700 dark:text-zinc-200'}`}
+                 title="Toggle Minimap"
+               >
+                 <Map size={18} />
+               </button>
            </div>
            
            <svg 
@@ -1659,7 +1639,7 @@ export default function ERDiagramTool() {
         };
         
         return (
-          <div className="fixed top-16 right-3 md:top-auto md:bottom-22 md:right-6 z-[15]">
+          <div className="fixed top-16 left-3 md:top-auto md:bottom-5 md:left-auto md:right-6 z-[15] md:z-20">
             <svg 
               width={minimapWidth} 
               height={minimapHeight}
@@ -1754,25 +1734,25 @@ export default function ERDiagramTool() {
       })()}
       
       {/* Credits - Always visible */}
-      <div className="fixed bottom-24 md:bottom-5 right-4 md:right-6 z-20 md:z-15">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-lg hover:shadow-xl transition-all duration-200">
-          <span className="text-xs text-gray-600 dark:text-zinc-400">By</span>
+      <div className="fixed top-16 right-3 md:top-auto md:bottom-24 md:right-6 z-10 md:z-15">
+        <div className="flex items-center gap-1.5 md:gap-2 px-2 py-1 md:px-3 md:py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-lg hover:shadow-xl transition-all duration-200">
+          <span className="text-[10px] md:text-xs text-gray-600 dark:text-zinc-400">By</span>
           <a 
             href="https://github.com/anpapag1" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="text-xs font-medium text-gray-800 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            className="text-[10px] md:text-xs font-medium text-gray-800 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
             @anpapag1
           </a>
-          <span className="text-gray-300 dark:text-zinc-400">•</span>
+          <span className="text-gray-300 dark:text-zinc-400 text-[10px] md:text-xs">•</span>
           <a 
             href="https://github.com/anpapag1/er-tool" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs font-medium text-gray-800 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            className="flex items-center gap-1 text-[10px] md:text-xs font-medium text-gray-800 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-2.5 h-2.5 md:w-3 md:h-3" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
             </svg>
             Source

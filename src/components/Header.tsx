@@ -91,8 +91,38 @@ export default function Header({
   const internalFileInputRef = React.useRef<HTMLInputElement>(null);
   const fileInputRef = externalFileInputRef || internalFileInputRef;
 
+  if (isSearchOpen) {
+    return (
+      <header className="bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 px-2.5 md:px-4 py-2 md:py-3 shadow-2xl z-30 relative">
+        <div className="w-full flex items-center gap-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-2 md:px-3 py-1.5 md:py-2 min-h-[2.5rem]">
+          <Search size={16} className="text-gray-400 dark:text-zinc-500 flex-shrink-0" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search nodes..."
+            className="flex-1 min-w-0 px-1 py-1 text-sm md:text-base outline-none bg-transparent dark:text-zinc-100"
+            autoFocus
+          />
+          {searchQuery.trim() && (
+            <span className="text-xs text-gray-500 dark:text-zinc-400 whitespace-nowrap">
+              {nodes.filter(n => n.label.toLowerCase().includes(searchQuery.toLowerCase().trim())).length}/{nodes.length}
+            </span>
+          )}
+          <button
+            onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }}
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors flex-shrink-0 flex items-center justify-center rounded-lg"
+            title="Close Search"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      </header>
+    );
+  }
+
   return (
-    <header className="bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 px-2 md:px-4 py-2 md:py-3 flex items-center justify-between shadow-2xl z-30 relative">
+    <header className="bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 px-2.5 md:px-4 py-2 md:py-3 flex items-center justify-between shadow-2xl z-30 relative">
       {/* Left Section */}
       <div className="flex items-center gap-2 md:gap-3 min-w-0">
         <button 
@@ -137,7 +167,7 @@ export default function Header({
         {/* Physics Button - Icon only on mobile */}
         <button 
           onClick={() => setIsPhysicsEnabled(!isPhysicsEnabled)}
-          className={`flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all flex-shrink-0 ${
+          className={`flex items-center justify-center md:justify-start gap-1.5 w-10 md:w-auto h-10 md:h-auto px-0 md:px-3 py-0 md:py-1.5 rounded-xl text-xs md:text-sm font-medium transition-all flex-shrink-0 ${
             isPhysicsEnabled 
               ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800' 
               : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
@@ -153,7 +183,7 @@ export default function Header({
         <div className="relative flex-shrink-0">
           <button 
             onClick={() => setIsGridMenuOpen(!isGridMenuOpen)}
-            className={`flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${
+            className={`flex items-center justify-center md:justify-start gap-1.5 w-10 md:w-auto h-10 md:h-auto px-0 md:px-3 py-0 md:py-1.5 rounded-xl text-xs md:text-sm font-medium transition-all ${
               isGridSnapping 
                 ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800' 
                 : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
@@ -212,14 +242,14 @@ export default function Header({
 
         {/* Search - Compact on mobile */}
         {isSearchOpen && (
-          <div className="flex items-center gap-1 md:gap-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-1 md:px-2 py-1 shadow-lg">
-            <Search size={14} className="text-gray-400 dark:text-zinc-500 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 md:gap-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-2 md:px-2 py-1.5 shadow-lg min-h-[2.5rem]">
+            <Search size={15} className="text-gray-400 dark:text-zinc-500 flex-shrink-0" />
             <input 
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search..."
-              className="w-24 md:w-40 px-1 py-1 text-xs md:text-sm outline-none bg-transparent dark:text-zinc-100"
+              className="w-28 md:w-40 px-1 py-1 text-sm md:text-sm outline-none bg-transparent dark:text-zinc-100"
               autoFocus
             />
             {searchQuery.trim() && (
@@ -239,18 +269,18 @@ export default function Header({
           variant="ghost" 
           onClick={() => setIsSearchOpen(!isSearchOpen)} 
           icon={Search}
-          className={isSearchOpen ? 'bg-gray-200 dark:bg-zinc-700' : ''}
+          className={`${isSearchOpen ? 'bg-gray-200 dark:bg-zinc-700' : ''} h-9 w-9 p-0`}
           title="Search (Ctrl+F)"
         />
 
-        {/* Share - Hide on mobile, show on sm and up */}
+        {/* Share / Copy */}
         <Button 
           variant="ghost" 
           onClick={onShare} 
           icon={Copy} 
           title="Share Link" 
           disabled={nodes.length === 0}
-          className="hidden sm:flex"
+          className={`h-9 w-9 md:h-auto md:w-auto p-0 md:px-3 md:py-1.5 ${nodes.length > 0 ? 'bg-blue-500/15 text-blue-600 dark:text-blue-300 hover:bg-blue-500/25 dark:hover:bg-blue-400/20' : ''}`}
         />
 
         {/* Dark Mode */}
@@ -267,7 +297,7 @@ export default function Header({
           variant="ghost" 
           onClick={() => setIsSettingsOpen(!isSettingsOpen)} 
           icon={Settings}
-          className={isSettingsOpen ? 'bg-gray-200 dark:bg-zinc-700' : ''}
+          className={`${isSettingsOpen ? 'bg-gray-200 dark:bg-zinc-700' : ''} h-9 w-9 p-0`}
           title="Physics Settings" 
         />
 
@@ -275,7 +305,7 @@ export default function Header({
         <div className="relative flex-shrink-0" data-tutorial="export-button">
           <button 
             onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-            className="flex items-center gap-1 px-2 md:px-3 py-1.5 rounded-lg font-medium transition-all bg-gray-100 dark:bg-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-600 text-gray-600 dark:text-zinc-300 text-xs md:text-sm"
+            className="flex items-center justify-center md:justify-start gap-1.5 w-10 md:w-auto h-10 md:h-auto px-0 md:px-3 py-0 md:py-1.5 rounded-xl font-medium transition-all bg-gray-100 dark:bg-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-600 text-gray-600 dark:text-zinc-300 text-xs md:text-sm"
             title="Export Options"
           >
             <FileDown size={16} />

@@ -265,12 +265,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex-1 overflow-y-scroll bg-white dark:bg-zinc-900 sidebar-scroll">
         <div className="p-3 md:p-4 pr-4">
         {selectedNodeIds.length > 1 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-zinc-500 bg-gray-50 dark:bg-zinc-800 rounded-2xl p-4 border border-gray-200 dark:border-zinc-800">
-            <MousePointer2 size={32} className="mb-2 opacity-20 md:size-12 md:mb-4" />
-            <p className="text-sm md:text-base font-medium">{selectedNodeIds.length} items selected</p>
-            <Button variant="danger" className="mt-2 md:mt-4 text-xs md:text-sm py-1.5 md:py-2" onClick={deleteSelected}>
-              Delete Selection
-            </Button>
+          <div className="space-y-4 pb-24 md:pb-10">
+            <div className="bg-gray-50 dark:bg-zinc-800 rounded-2xl p-4 border border-gray-200 dark:border-zinc-800">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-blue-500/15 dark:bg-blue-400/15 border border-blue-300/40 dark:border-blue-400/30 flex items-center justify-center text-blue-600 dark:text-blue-300">
+                  <MousePointer2 size={18} />
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-gray-800 dark:text-zinc-100">{selectedNodeIds.length} items selected</p>
+                  <p className="text-xs text-gray-500 dark:text-zinc-400">Bulk actions will affect all selected nodes.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 pt-3 pb-4 md:pb-3 space-y-2">
+              <Button
+                variant="danger"
+                className="w-full py-3 text-sm"
+                onClick={deleteSelected}
+              >
+                Delete Selection
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full py-2 text-sm"
+                onClick={() => setSelectedNodeIds([])}
+              >
+                Clear Selection
+              </Button>
+            </div>
           </div>
         ) : (
           <>
@@ -392,14 +415,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
                 
                 <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 pt-3 pb-4 md:pb-3 space-y-2">
-                  <Button 
-                    onClick={handleSaveEntity} 
-                    className="w-full py-3 text-sm" 
-                    variant={editingEntityId ? "success" : "primary"} 
-                    icon={editingEntityId ? Check : Plus}
-                  >
-                    {editingEntityId ? "Update Entity" : "Create Entity"}
-                  </Button>
+                  {editingEntityId && (
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        onClick={handleSaveEntity} 
+                        className="flex-1 py-3 text-sm" 
+                        variant="success" 
+                        icon={Check}
+                      >
+                        Update Entity
+                      </Button>
+                      <Button
+                        onClick={deleteSelected}
+                        className="py-3 px-4 text-sm rounded-lg"
+                        variant="danger"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  )}
+                  {!editingEntityId && (
+                    <Button 
+                      onClick={handleSaveEntity} 
+                      className="w-full py-3 text-sm" 
+                      variant="primary" 
+                      icon={Plus}
+                    >
+                      Create Entity
+                    </Button>
+                  )}
                   {editingEntityId && (
                     <Button 
                       onClick={() => setSelectedNodeIds([])}
