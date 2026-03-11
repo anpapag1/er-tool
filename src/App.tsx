@@ -109,6 +109,11 @@ export default function ERDiagramTool() {
     } else {
       document.documentElement.classList.remove('dark');
     }
+
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) {
+      themeColorMeta.setAttribute('content', isDarkMode ? '#09090b' : '#f8fafc');
+    }
   }, [isDarkMode]);
   
   // --- Refs ---
@@ -1192,7 +1197,7 @@ export default function ERDiagramTool() {
 
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-black font-sans text-slate-800 dark:text-zinc-100">
+    <div className="flex flex-col h-[100dvh] bg-gray-50 dark:bg-black font-sans text-slate-800 dark:text-zinc-100">
       {/* Header */}
       <Header
         isSidebarOpen={isSidebarOpen}
@@ -1341,7 +1346,7 @@ export default function ERDiagramTool() {
 
            {/* Mobile Bottom Action Bar */}
            <div
-             className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 p-1.5 gap-1 z-30 flex items-center"
+             className="md:hidden fixed bottom-[max(env(safe-area-inset-bottom),0.75rem)] left-1/2 -translate-x-1/2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 p-1.5 gap-1 z-40 flex items-center"
              onMouseDown={(e) => e.stopPropagation()}
              onClick={(e) => e.stopPropagation()}
              onTouchStart={(e) => e.stopPropagation()}

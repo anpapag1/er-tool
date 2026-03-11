@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pause, Play, Grid, ChevronDown, Search, Copy, Settings, FileDown, Upload, PanelLeftClose, PanelLeftOpen, Undo, Redo, X, Moon, Sun } from 'lucide-react';
+import { Pause, Play, Grid, ChevronDown, Search, Copy, Settings, FileDown, Upload, PanelLeftClose, PanelLeftOpen, Undo, Redo, X, Moon, Sun, SlidersHorizontal } from 'lucide-react';
 import { Button } from './Button';
 import type { Node, PhysicsConfig } from '../types';
 
@@ -88,6 +88,7 @@ export default function Header({
 }: HeaderProps) {
   const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isPhysicsMenuOpen, setIsPhysicsMenuOpen] = useState(false);
   const internalFileInputRef = React.useRef<HTMLInputElement>(null);
   const fileInputRef = externalFileInputRef || internalFileInputRef;
 
@@ -124,7 +125,7 @@ export default function Header({
   return (
     <header className="bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 px-2.5 md:px-4 py-2 md:py-3 flex items-center justify-between shadow-2xl z-30 relative">
       {/* Left Section */}
-      <div className="flex items-center gap-2 md:gap-3 min-w-0">
+      <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
           className="hidden md:flex p-2.5 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-lg text-gray-600 dark:text-zinc-300 transition-colors flex-shrink-0"
@@ -135,14 +136,14 @@ export default function Header({
 
         <div className="flex items-center gap-1 md:gap-2 md:pl-2 md:border-l border-gray-200/50 dark:border-white/10 min-w-0">
           <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="logo" className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0 rounded-md" />
-          <h1 className="text-sm md:text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 bg-clip-text text-transparent truncate" style={{
+          <h1 className="text-sm md:text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 dark:from-blue-400 dark:via-purple-400 dark:to-blue-400 bg-clip-text text-transparent whitespace-nowrap" style={{
             backgroundSize: '200% 100%'
           }}> ER-Tool</h1>
         </div>
       </div>
 
       {/* Right Section - Buttons */}
-      <div className="flex items-center gap-1 flex-shrink-0">
+      <div className="flex items-center gap-1 flex-shrink-0 ml-2">
         {/* Undo/Redo - Hide on small screens */}
         <div className="hidden sm:flex items-center gap-1">
           <Button 
@@ -164,10 +165,10 @@ export default function Header({
           <div className="h-6 w-px bg-gray-300 dark:bg-zinc-600 mx-0.5"></div>
         </div>
 
-        {/* Physics Button - Icon only on mobile */}
+        {/* Physics Button - Desktop */}
         <button 
           onClick={() => setIsPhysicsEnabled(!isPhysicsEnabled)}
-          className={`flex items-center justify-center md:justify-start gap-1.5 w-10 md:w-auto h-10 md:h-auto px-0 md:px-3 py-0 md:py-1.5 rounded-xl text-xs md:text-sm font-medium transition-all flex-shrink-0 ${
+          className={`hidden md:flex items-center justify-center md:justify-start gap-1.5 w-10 md:w-auto h-10 md:h-auto px-0 md:px-3 py-0 md:py-1.5 rounded-xl text-xs md:text-sm font-medium transition-all flex-shrink-0 ${
             isPhysicsEnabled 
               ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800' 
               : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
@@ -178,6 +179,41 @@ export default function Header({
           {isPhysicsEnabled ? <Pause size={16} /> : <Play size={16} />}
           <span className="hidden md:inline">{isPhysicsEnabled ? "Physics" : "Off"}</span>
         </button>
+
+        {/* Physics Control - Mobile (toggle + settings in one place) */}
+        <div className="relative md:hidden flex-shrink-0">
+          <button
+            onClick={() => setIsPhysicsMenuOpen(v => !v)}
+            className={`h-9 w-9 flex items-center justify-center rounded-xl transition-all ${isPhysicsMenuOpen ? 'bg-blue-500/20 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300' : 'hover:bg-gray-100/70 dark:hover:bg-white/10 text-gray-700 dark:text-zinc-200'}`}
+            title="Physics"
+          >
+            <SlidersHorizontal size={16} />
+          </button>
+
+          {isPhysicsMenuOpen && (
+            <div className="absolute top-full right-0 mt-1 w-44 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 z-50 overflow-hidden text-sm">
+              <button
+                onClick={() => {
+                  setIsPhysicsEnabled(!isPhysicsEnabled);
+                }}
+                className="w-full px-3 py-2.5 text-left hover:bg-gray-100/60 dark:hover:bg-white/10 transition-all flex items-center justify-between"
+              >
+                <span>{isPhysicsEnabled ? 'Disable Physics' : 'Enable Physics'}</span>
+                {isPhysicsEnabled ? <Pause size={14} /> : <Play size={14} />}
+              </button>
+              <button
+                onClick={() => {
+                  setIsSettingsOpen(true);
+                  setIsPhysicsMenuOpen(false);
+                }}
+                className="w-full px-3 py-2.5 text-left hover:bg-gray-100/60 dark:hover:bg-white/10 transition-all border-t border-gray-200 dark:border-zinc-800 flex items-center justify-between"
+              >
+                <span>Physics Settings</span>
+                <Settings size={14} />
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Grid Menu */}
         <div className="relative flex-shrink-0">
@@ -297,7 +333,7 @@ export default function Header({
           variant="ghost" 
           onClick={() => setIsSettingsOpen(!isSettingsOpen)} 
           icon={Settings}
-          className={`${isSettingsOpen ? 'bg-gray-200 dark:bg-zinc-700' : ''} h-9 w-9 p-0`}
+          className={`${isSettingsOpen ? 'bg-gray-200 dark:bg-zinc-700' : ''} h-9 w-9 p-0 hidden md:flex`}
           title="Physics Settings" 
         />
 
