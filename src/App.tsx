@@ -1644,7 +1644,7 @@ export default function ERDiagramTool() {
         };
         
         return (
-          <div className="fixed top-16 left-3 md:top-auto md:bottom-5 md:left-auto md:right-6 z-[15] md:z-20">
+          <div className="fixed top-16 left-3 md:top-auto md:bottom-20 md:left-auto md:right-6 z-[15] md:z-20">
             <svg 
               width={minimapWidth} 
               height={minimapHeight}
@@ -1739,7 +1739,7 @@ export default function ERDiagramTool() {
       })()}
       
       {/* Credits - Always visible */}
-      <div className="fixed top-16 right-3 md:top-auto md:bottom-24 md:right-6 z-10 md:z-15">
+      <div className="fixed top-16 right-3 md:top-auto md:bottom-5 md:right-6 z-10 md:z-15">
         <div className="flex items-center gap-1.5 md:gap-2 px-2 py-1 md:px-3 md:py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-lg hover:shadow-xl transition-all duration-200">
           <span className="text-[10px] md:text-xs text-gray-600 dark:text-zinc-400">By</span>
           <a 
