@@ -29,8 +29,15 @@ export default function ERDiagramTool() {
   const [showMinimap, setShowMinimap] = useState(true);
   const [isDraggingMinimap, setIsDraggingMinimap] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('darkMode');
-    return saved ? JSON.parse(saved) : true;
+    if (typeof window === 'undefined') return true;
+    try {
+      const saved = window.localStorage.getItem('darkMode');
+      if (!saved) return true;
+      const parsed = JSON.parse(saved);
+      return typeof parsed === 'boolean' ? parsed : true;
+    } catch {
+      return true;
+    }
   });
   
   
@@ -103,7 +110,11 @@ export default function ERDiagramTool() {
   
   // Dark mode effect
   useEffect(() => {
-    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+    try {
+      window.localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+    } catch {
+      // Ignore storage write failures (private mode, disabled storage, etc.)
+    }
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
